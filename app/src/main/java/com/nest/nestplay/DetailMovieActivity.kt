@@ -72,11 +72,11 @@ class DetailMovieActivity: FragmentActivity() {
 
     }
 
-    private fun GetMovie(id: Int) {
+    private fun GetMovie(id_movie: Int) {
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
         docRef
-            .whereEqualTo("id", id)
+            .whereEqualTo("id", id_movie)
             .get()
             .addOnSuccessListener { documents ->
                 for (document in documents){
@@ -84,30 +84,39 @@ class DetailMovieActivity: FragmentActivity() {
                         val movie = document.toObject(MovieModel::class.java)
 
                         movie.poster_path = "https://image.tmdb.org/t/p/w1280" + movie.backdrop_path
-                        binding.titleDetail.setText(movie.title)
+                        var date = ""
+
+                        if(movie?.contentType == "Serie" && movie.first_air_date != null){
+                            binding.titleDetail.setText(movie?.name)
+                            date = movie.first_air_date
+                        }else{
+                            binding.titleDetail.setText(movie?.title)
+                            date = movie.release_date
+                        }
                         binding.descriptionDetail.setText(movie.overview)
                         val genresList = Genres.genres.filter { it.id in movie.genre_ids }
                         val genresNames = genresList.joinToString(" ● ") { "<font color='#08B44E'> ${it.name}</font>" }
-                        binding.subtitleDetail.text = HtmlCompat.fromHtml("$genresNames - ${movie.release_date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
+
+                        binding.subtitleDetail.text = HtmlCompat.fromHtml("$genresNames - ${date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
                         detailsResponse = movie
-                        binding.urlLinkVideo.setText(movie.url)
+                        binding.urlLinkVideo.setText(movie?.url)
                         Glide.with(this)
                             .load(movie.poster_path)
                             .into(binding.imgBannerDetail)
 
-                        GetSimilar(movie.genre_ids.get(0))
+                        GetSimilar(movie.genre_ids.get(0), id_movie)
                     }
                 }
             }
 
     }
 
-    private fun GetSimilar(genre: Int){
+    private fun GetSimilar(genre:Int, id_movie: Int){
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
         docRef
             .whereArrayContains("genre_ids", genre)
-            .limit(12)
+            .limit(13)
             .get()
             .addOnSuccessListener {documents ->
                 val movieList = mutableListOf<MovieModel>()
@@ -115,7 +124,9 @@ class DetailMovieActivity: FragmentActivity() {
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
                         movie.poster_path = "https://image.tmdb.org/t/p/w500" + movie.poster_path
-                        movieList.add(movie)
+                        if (movie.id != id_movie) {
+                            movieList.add(movie)
+                        }
                     }
                 }
                 if (SimilarFragment != null) {

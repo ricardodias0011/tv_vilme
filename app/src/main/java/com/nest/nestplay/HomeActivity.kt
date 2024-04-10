@@ -31,13 +31,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     lateinit var btnSearch: TextView
     lateinit var btnHome: TextView
     lateinit var btnMovie: TextView
+    lateinit var btnSeries: TextView
 
-    val allMoviesList = mutableListOf<ListMovieModel>()
+    var allMoviesList = mutableListOf<ListMovieModel>()
 
     var URLPATHIMAGE = "https://image.tmdb.org/t/p/w500"
     var SIDE_MENU = false
 
     lateinit var lastSelectedMenu: View
+    lateinit var lastSelectedCategory: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,7 +57,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         }
 
         MoviesListFragment.setOnContentSelectedListener { movie ->
-            updateMainMovie(movie)
+            if(movie != null){
+                updateMainMovie(movie)
+            }
         }
 
         MoviesListFragment.setOnItemClickListener {movie ->
@@ -63,7 +67,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             intent.putExtra("id", movie.id)
             startActivity(intent)
         }
-        GetPopularityMovies()
+        GetPopularityMovies("Home")
         val onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
             if (hasFocus) {
                 openMenu()
@@ -77,16 +81,24 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnHome = binding.btnHome
         btnMovie = binding.btnMovies
         btnSearch = binding.btnSearch
+        btnSeries =  binding.btnSeries
 
         btnHome.setOnKeyListener(this)
         btnHome.onFocusChangeListener = onFocusChangeListener
+
+        btnSearch.setOnKeyListener(this)
         btnSearch.onFocusChangeListener = onFocusChangeListener
+
+        btnMovie.setOnKeyListener(this)
         btnMovie.onFocusChangeListener = onFocusChangeListener
+
+        btnSeries.setOnKeyListener(this)
+        btnSeries.onFocusChangeListener = onFocusChangeListener
+
         lastSelectedMenu = btnHome
         lastSelectedMenu.isActivated = true
 
-
-
+        lastSelectedCategory = "Home"
     }
 
 
@@ -97,18 +109,33 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 lastSelectedMenu.isActivated = false
                 view?.isActivated = true
                 lastSelectedMenu = view!!
-
+                println(view.id)
                 when (view.id) {
+
                     R.id.btn_search -> {
                         selectedMenu = Constants.MENU_SEARCH
                         closeMenu()
                     }
                     R.id.btn_home -> {
                         selectedMenu = Constants.MENU_HOME
+                        clearList()
+                        lastSelectedCategory = "Home"
+                        GetPopularityMovies("Home")
                         closeMenu()
                     }
                     R.id.btn_movies -> {
                         selectedMenu = Constants.MENU_MOVIE
+                        clearList()
+                        lastSelectedCategory = "Movie"
+                        GetPopularityMovies("Movie")
+                        closeMenu()
+                    }
+                    R.id.btn_series -> {
+                        selectedMenu = Constants.MENU_SERIES
+                        clearList()
+                        lastSelectedCategory = "Serie"
+                        GetPopularityMovies("Serie")
+                        closeMenu()
                     }
                 }
 
@@ -124,8 +151,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         }
         return false
     }
-
-
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && SIDE_MENU) {
@@ -149,11 +174,21 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         updateMainMovie(movie)
     }
 
-    private fun GetPopularityMovies() {
-        fetchMoviesAndUpdateList()
+    private fun clearList() {
+        allMoviesList = mutableListOf()
+        updateMoviesList(allMoviesList)
+    }
+    private fun GetPopularityMovies(type: String?) {
+        var query = fetchMoviesAndUpdateList()
             .orderBy("popularity", Query.Direction.DESCENDING)
             .limit(10)
-            .get()
+        if (type == "Serie") {
+            query = query.whereEqualTo("contentType", "Serie")
+        }
+        else if (type == "Movie") {
+            query = query.whereEqualTo("contentType", "Movie")
+        }
+        query.get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
                 for (document in documents){
@@ -169,7 +204,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 allMoviesList.add(ListMovieModel(movieList, "Filmes populares"))
-
                 GetMainMovies()
 
             }
@@ -178,6 +212,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
     private fun GetMainMovies() {
+
         fetchMoviesAndUpdateList()
             .limit(12)
             .get()
@@ -290,17 +325,27 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 allMoviesList.add(ListMovieModel(movieList, "Filmes nacionais"))
                 updateMoviesList(allMoviesList)
-
             }
     }
 
 
 
     private fun updateMainMovie(movie: ListMovieModel.Movie){
-        binding.mainTitle.setText(movie.title)
+
+        var date = ""
+        if(movie?.contentType == "Serie" && movie.first_air_date != null){
+            binding.mainTitle.setText(movie?.name)
+            date = movie.first_air_date
+        }else{
+            binding.mainTitle.setText(movie?.title)
+            date = movie.release_date
+        }
+
         val genresList = genres.filter { it.id in movie.genre_ids }
         val genresNames = genresList.joinToString(" ● ") { "<font color='#08B44E'> ${it.name}</font>" }
-        binding.infosMainMovie.text = HtmlCompat.fromHtml("$genresNames - ${movie.release_date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
+        if(genresNames != null){
+            binding.infosMainMovie.text = HtmlCompat.fromHtml("$genresNames - ${date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
+        }
 
         binding.mainTitle.maxLines = 2
         binding.description.maxLines = 3
@@ -331,6 +376,12 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             Constants.MENU_HOME -> {
                 btnHome.requestFocus()
             }
+            Constants.MENU_MOVIE -> {
+                btnMovie.requestFocus()
+            }
+            Constants.MENU_SERIES -> {
+                btnSeries.requestFocus()
+            }
         }
     }
 
@@ -342,6 +393,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnHome.text = "Inicio"
         binding.btnSearch.text = "Pesquisar"
         binding.btnMovies.text = "Filmes"
+        binding.btnSeries.text = "Séries"
         navBar.requestLayout()
         navBar.layoutParams.width = Common.getWidthInPercent(this, 16)
     }
@@ -350,6 +402,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnHome.text = ""
         binding.btnSearch.text = ""
         binding.btnMovies.text = ""
+        binding.btnSeries.text = ""
         navBar.requestLayout()
         navBar.layoutParams.width = Common.getWidthInPercent(this, 7)
         SIDE_MENU = false

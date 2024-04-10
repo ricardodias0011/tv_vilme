@@ -132,11 +132,10 @@
 
     <androidx.leanback.widget.BrowseFrameLayout
         android:id="@+id/blfNavBar"
-        android:layout_width="50dp"
+        android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:background="#000000"
         android:nextFocusLeft="@id/container"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_start"
         app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
@@ -144,45 +143,58 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:orientation="vertical">
+
             <TextView
                 android:id="@+id/btn_search"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text=""
                 android:layout_marginLeft="5dp"
-                android:gravity="center_vertical"
-                android:drawablePadding="16dp"
-                android:drawableLeft="@drawable/icon_sector_menu_search"
-                android:focusable="true"
                 android:background="@drawable/selector_menu"
-                android:textColor="@drawable/menu_text"
-                />
+                android:drawableLeft="@drawable/icon_sector_menu_search"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
 
             <TextView
                 android:id="@+id/btn_home"
                 android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/icon_sector_menu_home"
+                android:drawablePadding="16dp"
+                android:focusable="true"
                 android:gravity="center_vertical"
                 android:text=""
-                android:layout_marginLeft="5dp"
-                android:drawablePadding="16dp"
-                android:drawableLeft="@drawable/icon_sector_menu_home"
-                android:layout_height="56dp"
-                android:background="@drawable/selector_menu"
-                android:textColor="@drawable/menu_text"
-                android:focusable="true" />
+                android:textColor="@drawable/menu_text" />
+
             <TextView
                 android:id="@+id/btn_movies"
                 android:layout_width="match_parent"
-                android:drawableLeft="@drawable/icon_sector_menu_movie"
-                android:layout_marginLeft="5dp"
-                android:gravity="center_vertical"
-                android:drawablePadding="16dp"
-                android:text=""
                 android:layout_height="56dp"
-                android:focusable="true"
-                android:textColor="@drawable/menu_text"
+                android:layout_marginLeft="5dp"
                 android:background="@drawable/selector_menu"
-                />
+                android:drawableLeft="@drawable/icon_sector_menu_movie"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
+
+            <TextView
+                android:id="@+id/btn_series"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/icon_sector_menu_series"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
         </LinearLayout>
     </androidx.leanback.widget.BrowseFrameLayout>
 

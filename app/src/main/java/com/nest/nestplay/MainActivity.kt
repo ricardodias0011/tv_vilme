@@ -31,15 +31,19 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun AuthLoginWithEmailAndPassword(email: String, password: String) {
+        binding.authLoginEnter.setText("Carregando...")
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener{task ->
             if(task.isSuccessful){
+                binding.authLoginEnter.setText("Entrar")
                 val i = Intent(this, HomeActivity::class.java)
                 i.putExtra("data_extra", "data bem legal")
                 startActivity(i)
                 finish()
             }else {
+                binding.authLoginEnter.setText("Entrar")
                 Toast.makeText(applicationContext, "Email ou senha invalídos", Toast.LENGTH_LONG).show()
             }
         }
+
     }
 }

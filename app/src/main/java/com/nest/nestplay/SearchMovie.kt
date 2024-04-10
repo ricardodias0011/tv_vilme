@@ -8,8 +8,12 @@ import android.widget.GridLayout
 import android.widget.TextView
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.firestore
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivitySearchMovieBinding
@@ -102,19 +106,32 @@ class SearchMovie : FragmentActivity() {
     }
 
     private fun GetSearchMovies(query: String) {
-        val queryLowerCase = query.capitalize()
+        val queryCapitalizeCase = query.capitalize()
+
+        val tasks = mutableListOf<Task<QuerySnapshot>>().apply {
+            add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("title", queryCapitalizeCase)
+                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(10).get())
+
+            add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("name", queryCapitalizeCase)
+                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(10).get())
+
+        }
+
         listMovies.clear()
-        fetchMoviesAndUpdateList()
-            .whereGreaterThanOrEqualTo("title", queryLowerCase)
-            .whereLessThanOrEqualTo("title", queryLowerCase + "\uf8ff")
-            .limit(12)
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    if(document != null){
+        Tasks.whenAllSuccess<QuerySnapshot>(tasks)
+            .addOnSuccessListener { querySnapshots ->
+                val combinedResults = mutableListOf<DocumentSnapshot>()
+                for (snapshot in querySnapshots) {
+                    combinedResults.addAll(snapshot.documents)
+                }
+                listMovies.clear()
+                for (document in combinedResults) {
+                    if (document != null) {
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        listMovies.add(movie)
+                        if(movie != null){
+                            movie?.poster_path = URLPATHIMAGE + movie.poster_path
+                            listMovies.add(movie)
+                        }
                     }
                 }
                 adpterMovie.notifyDataSetChanged()

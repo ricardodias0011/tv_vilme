@@ -22,5 +22,7 @@ data class MovieModel(
     val title: String = "",
     val vote_average: Double = 0.0,
     val vote_count: Int = 0,
-    val url: String = ""
+    val url: String = "",
+    val original_title_lowcase: String? = "",
+    val contentType: String? = ""
 ): Parcelable

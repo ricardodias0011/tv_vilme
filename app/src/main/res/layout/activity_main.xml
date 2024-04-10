@@ -39,7 +39,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.9" />
+        app:layout_constraintGuide_percent="0.8" />
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_horizintal_start"
         android:layout_width="wrap_content"
@@ -47,78 +47,73 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.1" />
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragmentContainerView"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="#0B0A0A"
+        android:paddingHorizontal="45dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="35dp"
         app:layout_constraintBottom_toTopOf="@+id/guideline_horizintal_end"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
         app:layout_constraintTop_toTopOf="@+id/guideline_horizintal_start"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.0">
 
-    <TextView
-        android:id="@+id/textLoginView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="28dp"
-        android:fontFamily="@font/poppins_bold"
-        android:text="Login"
-        android:textColor="#FFFEFE"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.499"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/fragmentContainerView" />
+        <TextView
+            android:id="@+id/textLoginView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Login"
+            android:textColor="#FFFEFE"
+            android:textSize="20sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.499"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/fragmentContainerView" />
 
-    <EditText
-        android:id="@+id/auth_login_email"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:background="#191818"
-        android:ems="10"
-        android:hint="Email"
-        android:inputType="text|textEmailAddress"
-        android:padding="10sp"
-        android:textColor="#FFFDFD"
-        app:layout_constraintBottom_toTopOf="@+id/auth_login_password"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_m_end"
-        app:layout_constraintHorizontal_bias="0.495"
-        app:layout_constraintStart_toStartOf="@+id/guideline_m_start"
-        app:layout_constraintTop_toBottomOf="@+id/textLoginView" />
+        <EditText
+            android:id="@+id/auth_login_email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="#191818"
+            android:ems="10"
+            android:hint="Email"
+            android:inputType="text|textEmailAddress"
+            android:padding="10sp"
+            android:textColor="#FFFDFD" />
 
-    <EditText
-        android:id="@+id/auth_login_password"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="132dp"
-        android:background="#191818"
-        android:ems="10"
-        android:hint="Senha"
-        android:inputType="text|textPassword"
-        android:padding="10sp"
-        android:textColor="#FFFDFD"
-        app:layout_constraintBottom_toBottomOf="@+id/fragmentContainerView"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_m_end"
-        app:layout_constraintHorizontal_bias="0.495"
-        app:layout_constraintStart_toStartOf="@+id/guideline_m_start" />
+        <EditText
+            android:id="@+id/auth_login_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="#191818"
+            android:ems="10"
+            android:hint="Senha"
+            android:inputType="text|textPassword"
+            android:padding="10sp"
+            android:textColor="#FFFDFD" />
 
-    <Button
-        android:id="@+id/auth_login_enter"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="#F70B2C"
-        android:fontFamily="@font/poppins_bold"
-        android:text="Entrar"
-        android:padding="10sp"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@+id/fragmentContainerView"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_m_end"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="@+id/guideline_m_start"
-        app:layout_constraintTop_toBottomOf="@+id/auth_login_password"
-        app:layout_constraintVertical_bias="0.264" />
+        <Button
+            android:id="@+id/auth_login_enter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/btn_selector_primary"
+            android:fontFamily="@font/poppins_bold"
+            android:padding="10sp"
+            android:text="Entrar"
+            android:textColor="@color/text_color_selector"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline_m_end"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="@+id/guideline_m_start"
+            app:layout_constraintTop_toBottomOf="@+id/auth_login_password"
+            app:layout_constraintVertical_bias="0.264" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

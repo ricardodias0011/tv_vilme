@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "387805062188",
+    "project_id": "nexus-tv-45ee6",
+    "storage_bucket": "nexus-tv-45ee6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:387805062188:android:ff262ff6d039f29b965d89",
+        "android_client_info": {
+          "package_name": "com.nest.nestplay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDx_ZNi5q23TCrG9bLIe4geV4Bt3J6ynzg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -127,6 +127,10 @@ class ListFragment : RowsSupportFragment() {
         }
     }
 
+    fun clearAll() {
+        rootAdapter.clear()
+    }
+
     fun requestFocus(): View {
         val view = view
         view?.requestFocus()

@@ -32,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent=".03" />
+        app:layout_constraintGuide_percent=".05" />
 
 
     <ImageView
@@ -134,7 +134,6 @@
         android:id="@+id/blfNavBar"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:background="#000000"
         android:nextFocusLeft="@id/container"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -198,5 +197,18 @@
         </LinearLayout>
     </androidx.leanback.widget.BrowseFrameLayout>
 
+    <TextView
+        android:id="@+id/fragCatogy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="25dp"
+        android:text="Home"
+        android:background="@drawable/selected_menu"
+        android:paddingHorizontal="10dp"
+        android:textColor="#BFBFBF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

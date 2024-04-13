@@ -40,7 +40,8 @@ class DetailMovieActivity: FragmentActivity() {
         EpisodesListFragment.setOnItemClickListener { movie ->
             val intent = Intent(this, VideoPlayActivity::class.java)
             detailsResponse?.url = movie.url
-            detailsResponse?.current_ep = movie.ep_number
+            detailsResponse?.current_ep = movie?.ep_number
+            detailsResponse?.season = movie?.season
             intent.putExtra("movie", detailsResponse)
             startActivity(intent)
         }

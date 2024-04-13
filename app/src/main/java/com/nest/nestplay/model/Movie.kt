@@ -26,4 +26,5 @@ data class MovieModel(
     val original_title_lowcase: String? = "",
     val contentType: String? = "",
     var current_ep: Int? = 0,
+    var season: Int? = 0,
 ): Parcelable

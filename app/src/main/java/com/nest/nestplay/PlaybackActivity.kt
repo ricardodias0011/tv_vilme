@@ -4,6 +4,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
 import com.google.firebase.Firebase
@@ -18,10 +19,11 @@ import com.nest.nestplay.player.CustomTransportControlGlue
 class PlaybackFragment : VideoSupportFragment() {
 
     private lateinit var transporGlue: CustomTransportControlGlue
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
+
     private var runnable: Runnable? = null
 
-    private val jumpHandler = Handler()
+    private val jumpHandler = Handler(Looper.getMainLooper())
     private var jumpRunnable: Runnable? = null
     private var tojump = true
 
@@ -53,7 +55,7 @@ class PlaybackFragment : VideoSupportFragment() {
         transporGlue.host = VideoSupportFragmentGlueHost(this)
 
         transporGlue.playerAdapter.setDataSource(Uri.parse(data?.url))
-
+        println(data?.url)
         transporGlue.loadMovieInfo(data)
 
         transporGlue.playerAdapter.play()
@@ -89,7 +91,7 @@ class PlaybackFragment : VideoSupportFragment() {
             if(isControlsOverlayVisible || event.repeatCount > 0 ){
                 if(data != null && currentPosition > 30000){
                     println("TESTE GeteCurrentTime chamado")
-                    GeteCurrentTime(currentPosition, data, null)
+//                    GeteCurrentTime(currentPosition, data, null)
                 }
             } else when(keyCode){
 
@@ -101,13 +103,20 @@ class PlaybackFragment : VideoSupportFragment() {
     fun GeteCurrentTime(time: Long?, movie: MovieModel, only_get: Boolean?){
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
-        val docRef = db.collection("content_watch")
-        println("GeteCurrentTime em execução")
+
+
 
         currentUser?.let { user ->
-            docRef
+            var query =  db.collection("content_watch")
                 .whereEqualTo("user_id", user.uid)
                 .whereEqualTo("content_id", movie.id)
+
+            if (movie?.contentType == "Serie") {
+                query = query
+                    .whereEqualTo("episode", movie?.current_ep)
+                    .whereEqualTo("season", movie?.season)
+            }
+            query
                 .get()
                 .addOnSuccessListener { documents ->
                     val firstDocument = documents.firstOrNull()
@@ -161,6 +170,12 @@ class PlaybackFragment : VideoSupportFragment() {
                 "createdAt" to now,
                 "updatedAt" to now
             )
+
+            if (movie?.contentType == "Serie") {
+                newItem["episode"] = movie?.current_ep
+                newItem["season"] = movie?.season
+            }
+
             docRef
                 .add(newItem)
                 .addOnSuccessListener { documentReference ->

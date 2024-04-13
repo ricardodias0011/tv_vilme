@@ -20,7 +20,7 @@
         android:theme="@style/Theme.NestPlay">
         <activity
             android:name=".SplashScreenActivity"
-            android:banner="@drawable/splash_anim"
+            android:banner="@mipmap/ic_launcher"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"

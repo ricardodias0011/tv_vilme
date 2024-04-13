@@ -35,13 +35,12 @@ class SearchMovie : FragmentActivity() {
 
         val recyclerViewMoviesList = binding.searchMoviesList
         recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 4)
-        recyclerViewMoviesList.setHasFixedSize(true)
         adpterMovie = MoviesListAdpter(this, listMovies)
         recyclerViewMoviesList.adapter = adpterMovie
 
-        val keyboardTopLayout = findViewById<GridLayout>(R.id.keyboard_top)
+        val keyboardBottomLayout = findViewById<GridLayout>(R.id.keyboard_bottom)
         val keyboardLayout = findViewById<GridLayout>(R.id.keyboard)
-        val keyboardButtonsTop = listOf(
+        val keyboardButtonsBottom = listOf(
             "ESPAÇO", "APAGAR"
         )
         val keyboardButtons = listOf(
@@ -52,7 +51,7 @@ class SearchMovie : FragmentActivity() {
             "y", "z", "1", "2", "3", "4",
             "5", "6", "7", "8", "9", "0"
         )
-        for (buttonTopLabel in keyboardButtonsTop) {
+        for (buttonTopLabel in keyboardButtonsBottom) {
             val button = Button(this)
             button.text = buttonTopLabel
             val params = GridLayout.LayoutParams().apply {
@@ -71,7 +70,7 @@ class SearchMovie : FragmentActivity() {
             button.setOnClickListener {
                 handleButtonClick(buttonTopLabel)
             }
-            keyboardTopLayout.addView(button)
+            keyboardBottomLayout.addView(button)
         }
 
         for (buttonLabel in keyboardButtons) {
@@ -86,9 +85,6 @@ class SearchMovie : FragmentActivity() {
             button.layoutParams = params
             button.setBackgroundResource(R.drawable.btn_selector_keybord)
             button.setTextColor(Color.WHITE)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                button.isFocusedByDefault = true
-            }
             button.setOnFocusChangeListener { v, hasFocus ->
                 if(hasFocus){
                     button.setTextColor(Color.BLACK)
@@ -96,7 +92,12 @@ class SearchMovie : FragmentActivity() {
                     button.setTextColor(Color.WHITE)
                 }
             }
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                button.isFocusedByDefault = true
+            }
+            if(buttonLabel == "a"){
+                button.requestFocus()
+            }
             button.setOnClickListener {
                 handleButtonClick(buttonLabel)
             }

@@ -5,11 +5,11 @@ import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import com.nest.nestplay.model.MovieModel
 
+
 class VideoPlayActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_playback)
-
 
         val data = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra("movie", MovieModel::class.java )

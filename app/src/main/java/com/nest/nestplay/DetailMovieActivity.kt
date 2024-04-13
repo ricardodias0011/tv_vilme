@@ -3,14 +3,19 @@ package com.nest.nestplay
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.core.text.HtmlCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
 import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.nest.nestplay.databinding.ActivityDetailMovieBinding
+import com.nest.nestplay.fragments.ListEpisodesFragment
 import com.nest.nestplay.model.Genres
+import com.nest.nestplay.model.ListEpisodesModel
 import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.utils.Common
 
@@ -18,8 +23,10 @@ class DetailMovieActivity: FragmentActivity() {
 
     lateinit var binding: ActivityDetailMovieBinding
     val SimilarFragment = ListFragment()
+    val EpisodesListFragment = ListEpisodesFragment()
 
     var detailsResponse: MovieModel? = null
+    var lastEpisode: ListEpisodesModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +34,16 @@ class DetailMovieActivity: FragmentActivity() {
         setContentView(binding.root)
 
         addFragment(SimilarFragment)
+        addFragmentEpisodeos(EpisodesListFragment)
+
+
+        EpisodesListFragment.setOnItemClickListener { movie ->
+            val intent = Intent(this, VideoPlayActivity::class.java)
+            detailsResponse?.url = movie.url
+            detailsResponse?.current_ep = movie.ep_number
+            intent.putExtra("movie", detailsResponse)
+            startActivity(intent)
+        }
 
         SimilarFragment.setOnItemDetailClickListener {movie ->
             val intent = Intent(this, DetailMovieActivity::class.java)
@@ -37,7 +54,8 @@ class DetailMovieActivity: FragmentActivity() {
         val movieId = intent.getIntExtra("id", 0)
 
         GetMovie(movieId)
-
+        GeteCurrentTime(movieId)
+        binding.moreEpisodesSerie.visibility = View.GONE
         binding.showMore.setOnClickListener {
 
             val subTitle = binding.subtitleDetail.text.toString()
@@ -49,25 +67,15 @@ class DetailMovieActivity: FragmentActivity() {
         }
 
         binding.play.setOnClickListener {
-            val urlVideo = binding.urlLinkVideo.text.toString()
-            val urlOverview = binding.subtitleDetail.text.toString()
-            val bannerVideo = binding.imgBannerDetail
-            val titleVideo = binding.titleDetail.text.toString()
-
+            if(lastEpisode != null && detailsResponse?.contentType == "Serie"){
+                if(lastEpisode != null){
+                    detailsResponse?.url = lastEpisode!!.url
+                    detailsResponse?.current_ep = lastEpisode!!.ep_number
+                }
+            }
             val intent = Intent(this, VideoPlayActivity::class.java)
             intent.putExtra("movie", detailsResponse)
             startActivity(intent)
-//
-//            val playbackActivity = PlaybackFragment()
-//            playbackActivity.setVideoUrl(PlayVideoModel(
-//                url = urlVideo,
-//                overview = urlOverview,
-//                title = titleVideo,
-//                backdrop_path = bannerVideo.tag as? String ?: ""
-//            ))
-//            supportFragmentManager.beginTransaction()
-//                .replace(android.R.id.content, playbackActivity)
-//                .commit()
         }
 
     }
@@ -82,7 +90,12 @@ class DetailMovieActivity: FragmentActivity() {
                 for (document in documents){
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
-
+                        if(movie.contentType == "Serie"){
+                            GetEpsodeos(movie.id)
+                            binding.moreLikeThis.nextFocusForwardId = binding.similarMoviesDetaillist.id
+                            binding.moreEpisodesSerie.visibility = View.VISIBLE
+                            binding.similarMoviesDetaillist.setPadding(0, 10, 0, 0)
+                        }
                         movie.poster_path = "https://image.tmdb.org/t/p/w1280" + movie.backdrop_path
                         var date = ""
 
@@ -111,6 +124,43 @@ class DetailMovieActivity: FragmentActivity() {
 
     }
 
+    private fun GetEpsodeos(id_movie: Int){
+        val db =  Firebase.firestore
+        val docRef = db.collection("epsodes_series")
+        docRef
+            .whereEqualTo("id_content", id_movie)
+            .orderBy("ep_number", Query.Direction.ASCENDING)
+            .get()
+            .addOnSuccessListener {documents ->
+                val episodesList = mutableListOf<ListEpisodesModel>()
+                val firstDocument = documents.firstOrNull()
+                if (firstDocument != null) {
+                    val firstMovie = firstDocument.toObject(ListEpisodesModel::class.java)
+                    lastEpisode = firstMovie
+                }
+                for (document in documents){
+                    if(document != null){
+                        val epsode = document.toObject(ListEpisodesModel::class.java)
+                        episodesList.add(epsode)
+                        println(document)
+                    }
+                }
+                if(episodesList?.isEmpty()!!){
+                    binding.moreEpisodesSerie.visibility = View.GONE
+                    binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
+                }
+                if (EpisodesListFragment != null) {
+                    EpisodesListFragment.bindData(episodesList,"Episódios")
+                } else {
+                }
+            }
+            .addOnFailureListener {
+                println(it)
+                binding.moreEpisodesSerie.visibility = View.GONE
+                binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
+            }
+    }
+
     private fun GetSimilar(genre:Int, id_movie: Int){
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
@@ -137,9 +187,39 @@ class DetailMovieActivity: FragmentActivity() {
             }
     }
 
+    fun GeteCurrentTime(movieId: Int){
+        val db = Firebase.firestore
+        val currentUser = Firebase.auth.currentUser
+        val docRef = db.collection("content_watch")
+        println("GeteCurrentTime em execução")
+        currentUser?.let { user ->
+            docRef
+                .whereEqualTo("user_id", user.uid)
+                .whereEqualTo("content_id", movieId)
+                .get()
+                .addOnSuccessListener { documents ->
+                    val firstDocument = documents.firstOrNull()
+                    if(firstDocument != null){
+                        binding.play.setText("Continuar assistindo")
+                    }else{
+                        binding.play.setText("Assistir")
+                    }
+                }
+                .addOnFailureListener {
+                }
+
+        }
+    }
+
+
     private fun addFragment(similarFragment: ListFragment) {
         val transaction = supportFragmentManager.beginTransaction()
         transaction.add(R.id.similarMoviesDetaillist, similarFragment)
+        transaction.commit()
+    }
+    private fun addFragmentEpisodeos(similarFragment: ListEpisodesFragment) {
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.add(R.id.more_episodes_serie, similarFragment)
         transaction.commit()
     }
 }

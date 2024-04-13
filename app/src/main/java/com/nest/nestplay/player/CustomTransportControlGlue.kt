@@ -19,6 +19,8 @@ class CustomTransportControlGlue(
     context: Context,
     playerAdpter: BasicMediaPlayerAdpter
 ): PlaybackTransportControlGlue<BasicMediaPlayerAdpter>(context, playerAdpter) {
+    private val initialBufferDuration = 5000
+    private val bufferSize = 1024 * 1024
     private val forwardAction = PlaybackControlsRow.FastForwardAction(context)
     private val rewindAction = PlaybackControlsRow.RewindAction(context)
     private val nextAction = PlaybackControlsRow.SkipNextAction(context)
@@ -28,13 +30,21 @@ class CustomTransportControlGlue(
         isSeekEnabled = true
     }
 
+    var isVideoStarted = false
+
+
+    fun startVideoAtTime(timeMillis: Long) {
+            println("PULAR PARA ${timeMillis}")
+            playerAdapter.seekTo(timeMillis)
+            playerAdapter.play()
+    }
+
+    override fun getCurrentPosition(): Long {
+        return playerAdapter.currentPosition
+    }
 
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
-        primaryActionsAdapter.add(previousAction)
-        primaryActionsAdapter.add(rewindAction)
         super.onCreatePrimaryActions(primaryActionsAdapter)
-        primaryActionsAdapter.add(forwardAction)
-        primaryActionsAdapter.add(nextAction)
     }
 
     override fun onActionClicked(action: Action?) {
@@ -69,13 +79,23 @@ class CustomTransportControlGlue(
     }
     fun loadMovieInfo(movie: MovieModel?) {
 
-        title = movie?.title
+        if(movie?.contentType == "Serie"){
+            title = movie?.name
+            if (movie?.current_ep != 0 || movie?.current_ep != null){
+                title = title as String? + " EP: ${movie?.current_ep}"
+            }
+        }else{
+            title = movie?.title
+        }
         if(movie != null) {
             val genresList = Genres.genres.filter { it?.id in movie.genre_ids }
             val genresNames = genresList.joinToString(" ● ") { "${it.name}" }
-            subtitle = "$genresNames - ${movie?.release_date?.slice(0..3)}"
+            var date_release = movie?.release_date
+            if(movie?.contentType == "Serie"){
+                date_release = movie?.first_air_date
+            }
+            subtitle = "$genresNames - ${date_release?.slice(0..3)}"
         }
-
         Glide.with(context)
             .asBitmap()
             .load("https://image.tmdb.org/t/p/w1280" + movie?.backdrop_path)
@@ -91,7 +111,6 @@ class CustomTransportControlGlue(
                 }
 
             })
-
         playWhenPrepared()
     }
 

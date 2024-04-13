@@ -2,6 +2,8 @@ package com.nest.nestplay
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.view.animation.Animation
@@ -68,6 +70,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             startActivity(intent)
         }
 
+        ChangeTextCatogy("Home")
         GetPopularityMovies("Home")
 
         val onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
@@ -86,18 +89,26 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnSeries =  binding.btnSeries
 
         btnHome.setOnKeyListener(this)
-        btnHome.setOnClickListener { onGetCategorys("Home") }
+        btnHome.setOnClickListener {
+            ChangeTextCatogy("Home")
+            onGetCategorys("Home")
+        }
         btnHome.onFocusChangeListener = onFocusChangeListener
 
         btnSearch.setOnKeyListener(this)
         btnSearch.onFocusChangeListener = onFocusChangeListener
-
         btnMovie.setOnKeyListener(this)
-        btnMovie.setOnClickListener { onGetCategorys("Movie") }
+        btnMovie.setOnClickListener {
+            ChangeTextCatogy("Filmes")
+            onGetCategorys("Movie")
+        }
         btnMovie.onFocusChangeListener = onFocusChangeListener
 
         btnSeries.setOnKeyListener(this)
-        btnSeries.setOnClickListener { onGetCategorys("Serie") }
+        btnSeries.setOnClickListener {
+            ChangeTextCatogy("Séries")
+            onGetCategorys("Serie")
+        }
         btnSeries.onFocusChangeListener = onFocusChangeListener
 
         lastSelectedMenu = btnHome
@@ -403,7 +414,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnSeries.text = "Séries"
         navBar.requestLayout()
         navBar.setBackgroundResource(R.drawable.banner_gradient)
-        navBar.layoutParams.width = Common.getWidthInPercent(this, 16)
+        navBar.layoutParams.width = Common.getWidthInPercent(this, 13)
     }
 
     fun closeMenu() {
@@ -417,4 +428,16 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         SIDE_MENU = false
     }
 
+    fun ChangeTextCatogy(text: String) {
+        val animSlide: Animation = AnimationUtils.loadAnimation(this, R.anim.slide_in_left)
+        binding.fragCatogyContainer.startAnimation(animSlide)
+        binding.fragCatogy.setText(text)
+
+        binding.fragCatogyContainer.setBackgroundResource(R.drawable.selected_category)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            binding.fragCatogy.setText("")
+            binding.fragCatogyContainer.setBackgroundResource(android.R.color.transparent)
+        }, 5000)
+    }
 }

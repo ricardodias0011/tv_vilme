@@ -69,8 +69,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHeight_default="percent"
             app:layout_constraintHeight_percent=".7"
-            app:layout_constraintStart_toStartOf="@id/guideline_start"
-            />
+            app:layout_constraintStart_toStartOf="@id/guideline_start" />
 
         <TextView
             android:id="@+id/title_detail"
@@ -173,9 +172,9 @@
             android:focusableInTouchMode="true"
             android:textAllCaps="false"
             android:focusedByDefault="true"
-            android:nextFocusDown="@id/similarMoviesDetaillist"
+            android:nextFocusDown="@id/more_episodes_serie"
             android:padding="8dp"
-            android:text="Adicionar a minha lista"
+            android:text="Adicionar a minha coleção"
             android:textSize="16sp"
             app:layout_constraintStart_toEndOf="@id/guideline_start"
             app:layout_constraintTop_toBottomOf="@+id/play"
@@ -183,15 +182,26 @@
             app:layout_constraintWidth_percent=".3" />
 
         <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/more_episodes_serie"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:focusable="false"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/more_like_this"
+            app:layout_constraintWidth_default="percent" />
+
+        <androidx.fragment.app.FragmentContainerView
             android:id="@+id/similarMoviesDetaillist"
+            layout_constraintTop_toBottomOf="more_episodes_serie"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            android:focusable="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/guideline_center"
-            />
-
-
+            app:layout_constraintVertical_bias="0.0" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

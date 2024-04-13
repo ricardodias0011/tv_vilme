@@ -134,12 +134,14 @@
         android:id="@+id/blfNavBar"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
+        android:focusable="false"
         android:nextFocusLeft="@id/container"
         app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:focusable="false"
             android:gravity="center_vertical"
             android:orientation="vertical">
 
@@ -197,18 +199,26 @@
         </LinearLayout>
     </androidx.leanback.widget.BrowseFrameLayout>
 
-    <TextView
-        android:id="@+id/fragCatogy"
+    <FrameLayout
+        android:id="@+id/fragCatogyContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="25dp"
-        android:text="Home"
-        android:background="@drawable/selected_menu"
-        android:paddingHorizontal="10dp"
-        android:textColor="#BFBFBF"
-        android:textSize="12sp"
-        android:textStyle="bold"
+        android:gravity="center"
+        android:focusable="false"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
 
+        <TextView
+            android:id="@+id/fragCatogy"
+            android:layout_width="wrap_content"
+            android:focusable="false"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:padding="10dp"
+            android:textColor="#BFBFBF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

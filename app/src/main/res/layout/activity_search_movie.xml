@@ -10,10 +10,11 @@
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_start"
+        android:focusable="false"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent=".30" />
+        app:layout_constraintGuide_percent=".32" />
 
     <TextView
         android:id="@+id/editText"
@@ -23,6 +24,7 @@
         android:text=""
         android:padding="8dp"
         android:focusable="false"
+        android:focusableInTouchMode="false"
         android:ellipsize="end"
         android:background="@color/transparent"
         android:maxLines="2"
@@ -31,22 +33,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
     <GridLayout
-        android:focusable="true"
-        android:focusedByDefault="true"
+        android:focusable="false"
         android:id="@+id/keyboard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="35dp"
         android:columnCount="6"
-        android:nextFocusDown="@id/keyboard_top"
+        android:nextFocusDown="@id/keyboard_bottom"
+        android:nextFocusRight="@id/searchMoviesList"
         android:rowCount="6"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editText" />
     <GridLayout
-        android:id="@+id/keyboard_top"
-        android:focusable="true"
+        android:id="@+id/keyboard_bottom"
+        android:focusable="false"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:nextFocusDown="@id/searchMoviesList"
+        android:nextFocusRight="@id/searchMoviesList"
         android:columnCount="2"
         android:rowCount="1"
         app:layout_constraintStart_toStartOf="parent"
@@ -57,6 +61,11 @@
         android:id="@+id/searchMoviesList"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:focusable="false"
+        android:nextFocusForward="@id/keyboard"
+        android:nextFocusLeft="@id/keyboard"
+        android:nextFocusRight="@id/keyboard"
+        android:nextFocusDown="@id/keyboard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"

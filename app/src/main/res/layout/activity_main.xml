@@ -9,7 +9,6 @@
     tools:context=".MainActivity">
 
 
-
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline_start"
         android:layout_width="wrap_content"
@@ -34,33 +33,20 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.65" />
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_horizintal_end"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.8" />
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline_horizintal_start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.1" />
+
 
     <LinearLayout
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:background="#0B0A0A"
-        android:paddingHorizontal="45dp"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="35dp"
-        app:layout_constraintBottom_toTopOf="@+id/guideline_horizintal_end"
+        android:padding="45dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/guideline_start"
-        app:layout_constraintTop_toTopOf="@+id/guideline_horizintal_start"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/textLoginView"

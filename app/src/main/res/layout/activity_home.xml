@@ -139,8 +139,8 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
-            android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_width="match_parent"
             android:focusable="false"
             android:gravity="center_vertical"
             android:orientation="vertical">
@@ -154,6 +154,7 @@
                 android:drawableLeft="@drawable/icon_sector_menu_search"
                 android:drawablePadding="16dp"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />
@@ -167,6 +168,7 @@
                 android:drawableLeft="@drawable/icon_sector_menu_home"
                 android:drawablePadding="16dp"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />
@@ -180,6 +182,7 @@
                 android:drawableLeft="@drawable/icon_sector_menu_movie"
                 android:drawablePadding="16dp"
                 android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />
@@ -192,7 +195,34 @@
                 android:background="@drawable/selector_menu"
                 android:drawableLeft="@drawable/icon_sector_menu_series"
                 android:drawablePadding="16dp"
+                android:focusableInTouchMode="true"
                 android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
+            <TextView
+                android:id="@+id/btn_genres"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:focusableInTouchMode="true"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/icon_sector_menu_genres"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
+            <TextView
+                android:id="@+id/btn_favs"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/baseline_view_list_24"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />

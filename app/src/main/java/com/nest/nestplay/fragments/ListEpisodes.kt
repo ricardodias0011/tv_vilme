@@ -5,7 +5,6 @@ import android.view.View
 import androidx.leanback.app.RowsSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.FocusHighlight
-import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
@@ -70,7 +69,7 @@ class ListEpisodesFragment : RowsSupportFragment() {
             arrayObjectAdapter.add(content)
         }
 
-        val headerItem = HeaderItem(title)
+        val headerItem = null
         val listRow = ListRow(headerItem, arrayObjectAdapter)
         rootAdapter.add(listRow)
     }

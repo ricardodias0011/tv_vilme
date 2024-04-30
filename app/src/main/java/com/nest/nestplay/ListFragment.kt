@@ -59,17 +59,15 @@ class ListFragment : RowsSupportFragment() {
 
     }
 
-    fun bindData(dataList: MutableList<ListMovieModel>) {
-        dataList.forEachIndexed { index, result ->
-            val arrayObjectAdapter = ArrayObjectAdapter(MovieListItemPresenter())
-            result.list.forEach { movie ->
-                arrayObjectAdapter.add(movie)
-                itemPositionMap[movie] = itemPositionMap.size
-            }
-            val headerItem = HeaderItem(result.title)
-            val listRow = ListRow(headerItem, arrayObjectAdapter)
-            rootAdapter.add(listRow)
+    fun bindData(dataList: ListMovieModel) {
+        val arrayObjectAdapter = ArrayObjectAdapter(MovieListItemPresenter())
+        dataList.list.forEach { movie ->
+            arrayObjectAdapter.add(movie)
+            itemPositionMap[movie] = itemPositionMap.size
         }
+        val headerItem = HeaderItem(dataList.title)
+        val listRow = ListRow(headerItem, arrayObjectAdapter)
+        rootAdapter.add(listRow)
     }
 
     fun bindMovieData(list: List<MovieModel>, title: String) {

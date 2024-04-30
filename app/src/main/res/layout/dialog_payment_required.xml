@@ -56,21 +56,6 @@
         app:layout_constraintStart_toStartOf="@id/guideline_start"
         app:layout_constraintTop_toBottomOf="@id/paymentRequiredTitle" />
 
-    <Button
-        android:id="@+id/btnAccomplishMakePayment"
-        android:layout_width="180dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/btn_selector"
-        android:focusable="true"
-        android:focusedByDefault="true"
-        android:fontFamily="sans-serif-black"
-        android:padding="8dp"
-        android:text="Relizar pagamento"
-        android:textColor="@color/text_color_selector"
-        android:textAllCaps="false"
-        android:textSize="13sp"
-        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
-        app:layout_constraintTop_toBottomOf="@id/paymentRequiredSubtitle" />
 
     <Button
         android:id="@+id/closeBtn"
@@ -86,8 +71,7 @@
         android:textAllCaps="false"
         android:textColor="@color/text_color_selector"
         android:textSize="13sp"
-        app:layout_constraintBottom_toBottomOf="@+id/btnAccomplishMakePayment"
-        app:layout_constraintEnd_toStartOf="@+id/btnAccomplishMakePayment"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
         app:layout_constraintTop_toBottomOf="@+id/paymentRequiredSubtitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -18,12 +18,13 @@ import com.nest.nestplay.utils.Common.Companion.getWidthInPercent
 
 class MoviesListAdpter(private val context: Context, private val listMovies: MutableList<ListMovieModel.Movie>):
     RecyclerView.Adapter<MoviesListAdpter.MovieViewHolder>() {
-
+    private var focusedItemPosition = RecyclerView.NO_POSITION
+    private var focusItem: View? = null
     var onItemFocusChangeListener: OnItemFocusChangeListener? = null
+    var onLastItemFocusChangeListener: OnLastItemFocusChangeListener? = null
 
     inner class MovieViewHolder(binding: MovieItemBinding): RecyclerView.ViewHolder(binding.root){
         val poster = binding.posteritemmovie
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
@@ -35,10 +36,25 @@ class MoviesListAdpter(private val context: Context, private val listMovies: Mut
 
     override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
         holder.itemView.setBackgroundResource(R.drawable.no_selected_bg)
+
+        if (position == focusedItemPosition) {
+            holder.itemView.requestFocus()
+            holder.itemView.setBackgroundResource(R.drawable.item_selected_background)
+        }
+
         holder.itemView.setOnFocusChangeListener { view, hasFocus ->
+            val movie = listMovies[position]
+            val isLastItem = position >= listMovies.size - 5
+            if(isLastItem){
+                if (hasFocus) {
+                    focusItem = holder.itemView
+                    focusedItemPosition = holder.adapterPosition
+                    onLastItemFocusChangeListener?.onLastItemFocused(movie)
+                }
+            }
             if (hasFocus) {
-                val movie = listMovies[position]
-                onItemFocusChangeListener?.onItemFocused(movie)
+
+                onItemFocusChangeListener?.onItemFocused(movie, holder.adapterPosition)
 
                 holder.itemView.setBackgroundResource(R.drawable.item_selected_background)
             } else {
@@ -68,7 +84,16 @@ class MoviesListAdpter(private val context: Context, private val listMovies: Mut
         view.startAnimation(animation)
     }
 
+    fun onFocusItem() {
+        focusItem?.requestFocus()
+    }
+
+
     interface OnItemFocusChangeListener {
-        fun onItemFocused(movie: ListMovieModel.Movie)
+        fun onItemFocused(movie: ListMovieModel.Movie, itemView: Int)
+    }
+
+    interface OnLastItemFocusChangeListener {
+        fun onLastItemFocused(movie: ListMovieModel.Movie)
     }
 }

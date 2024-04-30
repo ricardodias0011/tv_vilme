@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.Action
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -12,6 +13,7 @@ import androidx.leanback.widget.PlaybackControlsRow
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.nest.nestplay.R
 import com.nest.nestplay.model.Genres
 import com.nest.nestplay.model.MovieModel
 
@@ -19,24 +21,39 @@ class CustomTransportControlGlue(
     context: Context,
     playerAdpter: BasicMediaPlayerAdpter
 ): PlaybackTransportControlGlue<BasicMediaPlayerAdpter>(context, playerAdpter) {
-    private val initialBufferDuration = 5000
-    private val bufferSize = 1024 * 1024
+    private lateinit var currentMovie: MovieModel
+
     private val forwardAction = PlaybackControlsRow.FastForwardAction(context)
     private val rewindAction = PlaybackControlsRow.RewindAction(context)
-    private val nextAction = PlaybackControlsRow.SkipNextAction(context)
-    private val previousAction = PlaybackControlsRow.SkipPreviousAction(context)
 
-    init {
-        isSeekEnabled = true
+    private val subtitlesAction = object : PlaybackControlsRow.ShuffleAction(context) {
+        init {
+            icon = ContextCompat.getDrawable(context, R.drawable.ic_subtitles)
+        }
     }
 
-    var isVideoStarted = false
+    private val qualityChangerAction = object : PlaybackControlsRow.ShuffleAction(context) {
+        init {
+            icon = ContextCompat.getDrawable(context, R.drawable.ic_sliders)
+        }
+    }
+
+    init {
+        isSeekEnabled = false
+    }
 
 
     fun startVideoAtTime(timeMillis: Long) {
             println("PULAR PARA ${timeMillis}")
+        try{
             playerAdapter.seekTo(timeMillis)
             playerAdapter.play()
+        }
+        catch(e: Exception) {
+            e.printStackTrace()
+            playerAdapter.reset()
+            playerAdapter.play()
+        }
     }
 
     override fun getCurrentPosition(): Long {
@@ -45,16 +62,22 @@ class CustomTransportControlGlue(
 
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
         super.onCreatePrimaryActions(primaryActionsAdapter)
+//        primaryActionsAdapter.add(subtitlesAction)
+        primaryActionsAdapter.add(qualityChangerAction)
     }
 
     override fun onActionClicked(action: Action?) {
         when (action){
             forwardAction -> playerAdapter.fastForward()
             rewindAction -> playerAdapter.rewind()
+//            subtitlesAction -> playerAdapter.subtitle(context, currentMovie)
+            qualityChangerAction -> playerAdapter.highQuality(context)
             else -> super.onActionClicked(action)
         }
         onUpdateProgress()
     }
+
+
 
     override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
         if (event != null) {
@@ -78,7 +101,9 @@ class CustomTransportControlGlue(
         }
     }
     fun loadMovieInfo(movie: MovieModel?) {
-
+        if(movie != null){
+            currentMovie = movie
+        }
         if(movie?.contentType == "Serie"){
             title = movie?.name
             if (movie?.current_ep != 0 || movie?.current_ep != null){

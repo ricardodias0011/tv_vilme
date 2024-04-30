@@ -43,6 +43,9 @@ class MainActivity : FragmentActivity() {
                 binding.authLoginEnter.setText("Entrar")
                 Toast.makeText(applicationContext, "Email ou senha invalídos", Toast.LENGTH_LONG).show()
             }
+                task.addOnFailureListener {
+                    println(it)
+                }
         }
 
     }

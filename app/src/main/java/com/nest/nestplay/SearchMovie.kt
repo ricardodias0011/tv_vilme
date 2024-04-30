@@ -130,7 +130,7 @@ class SearchMovie : FragmentActivity() {
                     if (document != null) {
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
                         if(movie != null){
-                            movie?.poster_path = URLPATHIMAGE + movie.poster_path
+                            movie.poster_path = URLPATHIMAGE + movie.poster_path
                             listMovies.add(movie)
                         }
                     }

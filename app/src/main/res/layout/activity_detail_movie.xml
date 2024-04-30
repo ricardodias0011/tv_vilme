@@ -2,8 +2,12 @@
 <layout xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#000"
     >
-
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -126,7 +130,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:focusedByDefault="true"
-            android:nextFocusDown="@id/more_like_this"
+            android:nextFocusDown="@id/playBeginning"
             android:padding="8dp"
             android:text="Assistir"
             android:textAlignment="textStart"
@@ -137,7 +141,27 @@
             app:layout_constraintTop_toBottomOf="@+id/description_detail"
             app:layout_constraintWidth_default="percent"
             app:layout_constraintWidth_percent=".3" />
-
+        <Button
+            android:id="@+id/playBeginning"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:background="@drawable/btn_selector"
+            android:drawableLeft="@drawable/play_selector_icon"
+            android:drawablePadding="8dp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusDown="@id/more_like_this"
+            android:padding="8dp"
+            android:text="Assistir do início"
+            android:textAlignment="textStart"
+            android:textAllCaps="false"
+            android:textColor="@color/text_color_selector"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/guideline_start"
+            app:layout_constraintTop_toBottomOf="@+id/play"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent=".3" />
 
         <TextView
             android:id="@+id/show_more"
@@ -174,34 +198,57 @@
             android:focusedByDefault="true"
             android:nextFocusDown="@id/more_episodes_serie"
             android:padding="8dp"
-            android:text="Adicionar a minha coleção"
+            android:text="Adicionar aos favoritos"
             android:textSize="16sp"
             app:layout_constraintStart_toEndOf="@id/guideline_start"
-            app:layout_constraintTop_toBottomOf="@+id/play"
+            app:layout_constraintTop_toBottomOf="@+id/playBeginning"
             app:layout_constraintWidth_default="percent"
             app:layout_constraintWidth_percent=".3" />
 
+        <Spinner
+            android:id="@+id/spinner_select_temp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:background="@drawable/selector_spinner"
+            android:layout_marginTop="15dp"
+            app:layout_constraintStart_toStartOf="@+id/guideline_start"
+            app:layout_constraintTop_toBottomOf="@+id/more_like_this" />
+        <TextView
+            android:id="@+id/episodes_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Episódios"
+            android:textColor="#fff"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/guideline_start"
+            app:layout_constraintTop_toBottomOf="@+id/spinner_select_temp"
+            app:layout_constraintWidth_default="percent"
+            app:layout_constraintWidth_percent=".4" />
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/more_episodes_serie"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            android:layout_height="90dp"
             android:focusable="false"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/more_like_this"
+            app:layout_constraintTop_toBottomOf="@+id/episodes_text"
             app:layout_constraintWidth_default="percent" />
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/similarMoviesDetaillist"
-            layout_constraintTop_toBottomOf="more_episodes_serie"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="300dp"
+            android:paddingTop="15dp"
+            android:layout_marginTop="15dp"
             android:focusable="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/guideline_center"
-            app:layout_constraintVertical_bias="0.0" />
+            app:layout_constraintTop_toBottomOf="@+id/more_episodes_serie"
+            app:layout_constraintVertical_bias="1.0" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
 </layout>

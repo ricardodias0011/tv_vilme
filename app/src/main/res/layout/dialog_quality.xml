@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#00000080">
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.30" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.70" />
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#0F0F0F"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_end"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/color_red"
+            android:paddingHorizontal="40dp"
+            android:paddingVertical="20dp"
+            android:text="qualidade de imagem"
+            android:textAllCaps="true"
+            android:textColor="@color/color_white"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#0F0F0F"
+            android:padding="40dp"
+            android:orientation="vertical">
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+<!--                <RadioButton-->
+<!--                    android:id="@+id/radioButton"-->
+<!--                    android:buttonTint="@color/radio_button_color_selector"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:checked="true"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="1080p HD" />-->
+
+                <RadioButton
+                    android:id="@+id/radioButton2"
+                    android:checked="true"
+                    android:buttonTint="@color/radio_button_color_selector"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="720p" />
+            </RadioGroup>
+        </LinearLayout>
+        <Button
+            android:id="@+id/closeBtnQuality"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/btn_selector"
+            android:fontFamily="sans-serif-black"
+            android:padding="8dp"
+            android:text="Fechar"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textColor="@color/text_color_selector"
+            android:textSize="13sp"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

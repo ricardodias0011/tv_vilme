@@ -4,6 +4,7 @@ class Genre(val id: Int, val name: String)
 class Genres {
     companion object {
         val genres = listOf(
+            Genre(0, "Todos"),
             Genre(28, "Ação"),
             Genre(12, "Aventura"),
             Genre(16, "Animação"),

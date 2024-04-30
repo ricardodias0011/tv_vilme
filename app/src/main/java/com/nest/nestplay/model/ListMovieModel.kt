@@ -25,6 +25,8 @@ data class ListMovieModel(
         val vote_count: Int = 0,
         val url: String = "",
         val original_title_lowcase: String? = "",
-        val contentType: String? = ""
+        val contentType: String? = "",
+        val subtitles: List<String>? = listOf(),
+        val urls_subtitle: List<String>? = listOf()
     )
 }

@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NestPlay">
         <activity
+            android:name=".GenreActivity"
+            android:exported="false" />
+        <activity
             android:name=".SplashScreenActivity"
             android:banner="@mipmap/ic_launcher"
             android:exported="true"
@@ -48,6 +51,10 @@
         <activity
             android:name=".SearchMovie"
             android:exported="false" />
+        <activity
+            android:name=".MovieFavActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

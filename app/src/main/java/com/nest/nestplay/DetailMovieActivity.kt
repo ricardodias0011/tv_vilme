@@ -38,6 +38,7 @@ class DetailMovieActivity: FragmentActivity() {
     val EpisodesListFragment = ListEpisodesFragment()
     var detailsResponse: MovieModel? = null
     var lastEpisode: ListEpisodesModel? = null
+    var firstEpisode: ListEpisodesModel? = null
 
     var wasEncrypted: Boolean = false
 
@@ -52,21 +53,21 @@ class DetailMovieActivity: FragmentActivity() {
 
         loadingDialog = Common.loadingDialog(this)
 
-        EpisodesListFragment.setOnItemClickListener { movie ->
+        EpisodesListFragment.setOnItemClickListener { epsode ->
             val intent = Intent(this, VideoPlayActivity::class.java)
-            detailsResponse?.url = decrypt(movie.url)
-            detailsResponse?.current_ep = movie?.ep_number
-            detailsResponse?.season = movie?.season
-            detailsResponse?.urls_subtitle = movie?.urls_subtitle
-            detailsResponse?.subtitles = movie?.subtitles
-
+            wasEncrypted = false
+            detailsResponse?.url = decrypt(epsode.url)
+            detailsResponse?.current_ep = epsode?.ep_number
+            detailsResponse?.season = epsode?.season
+            detailsResponse?.urls_subtitle = epsode?.urls_subtitle
+            detailsResponse?.subtitles = epsode?.subtitles
+            detailsResponse?.idEpsode = epsode?.idEpsode
             if(detailsResponse?.url == null || detailsResponse?.url?.length!! < 2){
                 Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG)
             }else{
                 intent.putExtra("movie", detailsResponse)
                 startActivity(intent)
             }
-
         }
 
         SimilarFragment.setOnItemDetailClickListener {movie ->
@@ -109,19 +110,27 @@ class DetailMovieActivity: FragmentActivity() {
     }
 
     fun onClickPlayMovie(beginning: Boolean?) {
-        if(detailsResponse?.url != null){
-            detailsResponse?.url = decrypt(detailsResponse!!.url)
+        if (detailsResponse?.contentType == "Serie"){
+            wasEncrypted = false
         }
         if(lastEpisode != null && detailsResponse?.contentType == "Serie"){
-            if(lastEpisode != null){
-                detailsResponse?.url = decrypt(lastEpisode!!.url)
-                detailsResponse?.current_ep = lastEpisode!!.ep_number
+            detailsResponse?.url = decrypt(lastEpisode!!.url)
+            detailsResponse?.current_ep = lastEpisode!!.ep_number
+            detailsResponse?.idEpsode = lastEpisode!!.idEpsode
+        }else {
+            if(detailsResponse?.url != null){
+                detailsResponse?.url = decrypt(detailsResponse!!.url)
             }
         }
         if(beginning === true){
+            if(detailsResponse?.contentType == "Serie"){
+                wasEncrypted = false
+                detailsResponse?.url = decrypt(firstEpisode!!.url)
+                detailsResponse?.current_ep = firstEpisode!!.ep_number
+                detailsResponse?.idEpsode = firstEpisode!!.idEpsode
+            }
             detailsResponse?.beginningStart  = true
         }
-        println(detailsResponse?.url)
         if(detailsResponse?.url == null || detailsResponse?.url?.length!! < 2){
             Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG)
         }else{
@@ -134,7 +143,6 @@ class DetailMovieActivity: FragmentActivity() {
     fun addHeightViewListMovie() {
         val fragmentContainer = findViewById<FragmentContainerView>(R.id.similarMoviesDetaillist)
         val contentHeight = SimilarFragment?.view?.measuredHeight ?: 0
-        println("Altura definida para $contentHeight")
         val params = fragmentContainer.layoutParams
         params.height = contentHeight + 100
 
@@ -213,7 +221,7 @@ class DetailMovieActivity: FragmentActivity() {
                             .load(movie.poster_path)
                             .into(binding.imgBannerDetail)
 
-                        GetSimilar(movie.genre_ids.get(0), id_movie)
+                        GetSimilar(movie.genre_ids.get(0),id_movie)
 
 
                     }
@@ -237,7 +245,6 @@ class DetailMovieActivity: FragmentActivity() {
         binding.spinnerSelectTemp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedItem = position + 1
-                println("Item selecionado $selectedItem")
                 if(movie != null){
                     GetEpsodeos(movie.id, selectedItem)
                 }
@@ -259,15 +266,24 @@ class DetailMovieActivity: FragmentActivity() {
             .addOnSuccessListener {documents ->
                 val episodesList = mutableListOf<ListEpisodesModel>()
                 val firstDocument = documents.firstOrNull()
-                if (firstDocument != null) {
-                    val firstMovie = firstDocument.toObject(ListEpisodesModel::class.java)
-                    lastEpisode = firstMovie
+                val getfirstMovie = firstDocument?.toObject(ListEpisodesModel::class.java)
+                if (getfirstMovie != null) {
+                    firstEpisode = getfirstMovie
+                    firstEpisode?.idEpsode = firstDocument.id
                 }
                 for (document in documents){
                     if(document != null){
                         val epsode = document.toObject(ListEpisodesModel::class.java)
+                        epsode?.idEpsode = document.id
                         episodesList.add(epsode)
-                        println(document)
+                    }
+                }
+                val episodioMaisRecente = episodesList.maxByOrNull { it.last_seen?.seconds ?: 0 }
+                if(episodioMaisRecente != null){
+                    lastEpisode = episodioMaisRecente
+                }else {
+                    if (getfirstMovie != null) {
+                        lastEpisode = getfirstMovie
                     }
                 }
                 if(episodesList?.isEmpty()!!){
@@ -282,7 +298,6 @@ class DetailMovieActivity: FragmentActivity() {
                 }
             }
             .addOnFailureListener {
-                println(it)
                 binding.moreEpisodesSerie.visibility = View.GONE
                 binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
             }
@@ -291,9 +306,9 @@ class DetailMovieActivity: FragmentActivity() {
     private fun GetSimilar(genre:Int, id_movie: Int){
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
-        docRef
-            .whereArrayContains("genre_ids", genre)
-            .limit(13)
+        var query = docRef.whereArrayContains("genre_ids", genre)
+        query
+            .limit(14)
             .get()
             .addOnSuccessListener {documents ->
                 val movieList = mutableListOf<MovieModel>()
@@ -319,7 +334,6 @@ class DetailMovieActivity: FragmentActivity() {
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
         val docRef = db.collection("content_watch")
-        println("GeteCurrentTime em execução")
         currentUser?.let { user ->
             docRef
                 .whereEqualTo("user_id", user.uid)
@@ -424,6 +438,7 @@ class DetailMovieActivity: FragmentActivity() {
     }
     override fun onDestroy() {
         super.onDestroy()
+        wasEncrypted = false
         loadingDialog.hide()
     }
 }

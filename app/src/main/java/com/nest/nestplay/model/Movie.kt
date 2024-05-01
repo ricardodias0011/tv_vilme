@@ -30,5 +30,6 @@ data class MovieModel(
     var total_seasons: Int? = 0,
     var subtitles: List<String>? = listOf(),
     var urls_subtitle: List<String>? = listOf(),
-    var beginningStart: Boolean? = false
-): Parcelable
+    var beginningStart: Boolean? = false,
+    var idEpsode: String? = "",
+    ): Parcelable

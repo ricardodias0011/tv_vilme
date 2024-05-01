@@ -111,10 +111,10 @@ class SearchMovie : FragmentActivity() {
 
         val tasks = mutableListOf<Task<QuerySnapshot>>().apply {
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("title", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(10).get())
+                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(15).get())
 
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("name", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(10).get())
+                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(15).get())
 
         }
 

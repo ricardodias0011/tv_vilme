@@ -85,6 +85,8 @@ class MoviesListAdpter(private val context: Context, private val listMovies: Mut
     }
 
     fun onFocusItem() {
+        println("focusItem.requestFocus")
+        println(focusItem)
         focusItem?.requestFocus()
     }
 

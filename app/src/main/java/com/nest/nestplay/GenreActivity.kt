@@ -27,14 +27,16 @@ class GenreActivity : FragmentActivity() {
 
     lateinit var loadingDialog: Dialog
 
-    var lastVisible: Int? = null
+    var lastVisible: Double? = null
+    var lastVisibleGet: Boolean? = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGenreBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         loadingDialog = Common.loadingDialog(this)
-
+        loadingDialog.show()
         binding.btnSearchGenre.setOnClickListener {
             val intent = Intent(this, SearchMovie::class.java)
             startActivity(intent)
@@ -47,7 +49,9 @@ class GenreActivity : FragmentActivity() {
 
         adpterMovie.onLastItemFocusChangeListener  = object : MoviesListAdpter.OnLastItemFocusChangeListener {
             override fun onLastItemFocused(movie: ListMovieModel.Movie) {
-                GetMovieListFavs(idGenreSelected, false)
+                if(lastVisibleGet == true){
+                    GetMovieListFavs(idGenreSelected, false)
+                }
             }
         }
 
@@ -60,6 +64,7 @@ class GenreActivity : FragmentActivity() {
 
         adpterLintGenre.onItemClickChangerListener = object : GenreListAdpter.OnItemClickChangerListener {
             override fun onItemClicked(item: Genre) {
+                lastVisibleGet = true
                 lastVisible = null
                 GetMovieListFavs(item.id, true)
                 idGenreSelected = item.id
@@ -70,21 +75,19 @@ class GenreActivity : FragmentActivity() {
     }
 
     private fun GetMovieListFavs(gere: Int, clear: Boolean?) {
-        loadingDialog.show()
+
 
         if (clear == true) {
             listMovies.clear()
         }
-        println(gere)
 
+        var query = fetchMoviesList().limit(15)
 
-        var query = fetchMoviesList().limit(10).orderBy("vote_count")
         if (gere != 0) {
             query = query.whereArrayContains("genre_ids", gere)
         }
-
         if (lastVisible != null && clear == false) {
-            query = query.startAfter(lastVisible)
+            query = query.orderBy("popularity").startAfter(lastVisible)
         }
 
         query.get()
@@ -92,9 +95,17 @@ class GenreActivity : FragmentActivity() {
                     if (clear == true) {
                         listMovies.clear()
                     }
+
+                    if (!querySnapshots.isEmpty) {
+                        lastVisible = querySnapshots.documents[querySnapshots.size() - 1].toObject(ListMovieModel.Movie::class.java)?.popularity
+                    }else{
+                        lastVisibleGet = false
+                    }
+                     println(querySnapshots.isEmpty)
+                    println(querySnapshots)
                     for (document in querySnapshots) {
+                        println(document)
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        lastVisible = movie.vote_count
                         movie.poster_path = URLPATHIMAGE + movie.poster_path
                         listMovies.add(movie)
                     }
@@ -110,10 +121,6 @@ class GenreActivity : FragmentActivity() {
             }
     }
 
-    override fun onResume() {
-        super.onResume()
-        GetMovieListFavs(0, true)
-    }
     private fun fetchMoviesList(): CollectionReference {
         val db = Firebase.firestore
         val docRef = db.collection("catalog")

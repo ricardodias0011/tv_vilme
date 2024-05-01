@@ -91,7 +91,7 @@ class PlaybackFragment : VideoSupportFragment() {
                 if(data != null){
                     if (!tojump) {
                         if(currentPosition > 300){
-//                            LoadSubtitlesTask().execute("https://playnestvilme.s3.us-east-2.amazonaws.com/XOGM_1/x_e_1.vtt")
+//                            LoadSubtitlesTask().execute("x_e_1.vtt")
                             GeteCurrentTime(null, data, true)
                             tojump = true
                         }
@@ -146,9 +146,7 @@ class PlaybackFragment : VideoSupportFragment() {
                 var timestamp: Long = 0
 
                 while (reader.readLine().also { line = it } != null) {
-                    println("Porra aki olha aki")
                     if (line!!.matches(Regex("\\d{2}:\\d{2}:\\d{2}.\\d{3} --> \\d{2}:\\d{2}:\\d{2}.\\d{3}"))) {
-                        println("OLHA A PEDRA")
                         val timestamps = line!!.split(" --> ")
                         val startTime = parseTimestamp(timestamps[0])
                         val endTime = parseTimestamp(timestamps[1])
@@ -224,7 +222,7 @@ class PlaybackFragment : VideoSupportFragment() {
     fun ResetToJumPLogn() {
         Handler(Looper.getMainLooper()).postDelayed({
             tojumpLong = true
-        }, 500)
+        }, 60000)
     }
 
     fun GeteCurrentTime(time: Long?, movie: MovieModel, only_get: Boolean?){
@@ -264,7 +262,6 @@ class PlaybackFragment : VideoSupportFragment() {
                 .addOnFailureListener {
                     updateCurrentTime(user.uid, movie, time, null)
                 }
-
         }
     }
 
@@ -274,6 +271,20 @@ class PlaybackFragment : VideoSupportFragment() {
         val db = Firebase.firestore
         val docRef = db.collection("content_watch")
         val now = Timestamp.now()
+
+        if(movie?.contentType == "Serie"){
+            val docRefEpsodes = db.collection("epsodes_series")
+            println("O ID DO EPSODIO É ${movie.idEpsode}")
+            if(movie?.idEpsode != null || movie.idEpsode != ""){
+                docRefEpsodes.document(movie.idEpsode!!)
+                    .update(
+                        mapOf(
+                            "last_seen" to now
+                        )
+                    )
+            }
+        }
+
         if(id != null){
             docRef.document(id)
                 .update(
@@ -294,7 +305,7 @@ class PlaybackFragment : VideoSupportFragment() {
                 "content_id" to movie.id,
                 "current_time" to currentTime,
                 "createdAt" to now,
-                "updatedAt" to now
+                "updatedAt" to now,
             )
 
             if (movie?.contentType == "Serie") {

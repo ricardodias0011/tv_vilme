@@ -19,9 +19,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NestPlay">
         <activity
-            android:name=".GenreActivity"
-            android:exported="false" />
-        <activity
             android:name=".SplashScreenActivity"
             android:banner="@mipmap/ic_launcher"
             android:exported="true"
@@ -36,6 +33,12 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".PaymentRequiredActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GenreActivity"
+            android:exported="false" />
         <activity
             android:name=".VideoPlayActivity"
             android:exported="false" />
@@ -54,7 +57,6 @@
         <activity
             android:name=".MovieFavActivity"
             android:exported="false" />
-
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

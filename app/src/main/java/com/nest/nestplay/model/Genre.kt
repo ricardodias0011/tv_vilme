@@ -23,6 +23,14 @@ class Genres {
             Genre(10770, "Cinema TV"),
             Genre(53, "Thriller"),
             Genre(10752, "Guerra"),
+            Genre(10759, "Ação e aventura"),
+            Genre(10763, "Notícias"),
+            Genre(10762, "Kids"),
+            Genre(10764, "Reality"),
+            Genre(10765, "Sci-Fi e fantasia"),
+            Genre(10766, "Novela"),
+            Genre(10767, "Tak show"),
+            Genre(10768, "Guerra e Política"),
             Genre(37, "Faroeste")
         )
     }

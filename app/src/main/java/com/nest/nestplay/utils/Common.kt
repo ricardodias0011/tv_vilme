@@ -11,6 +11,9 @@ import com.nest.nestplay.model.UserModel
 
 class Common {
     companion object {
+
+        var msgPermissionDENIED = "PERMISSION_DENIED: Missing or insufficient permissions."
+
         fun getWidthInPercent(context: Context, percent: Int): Int {
             val width = context.resources.displayMetrics.widthPixels ?: 0
             return (width * percent) / 100

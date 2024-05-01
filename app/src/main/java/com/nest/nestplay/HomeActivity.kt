@@ -1,6 +1,7 @@
 package com.nest.nestplay
 
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -20,11 +21,13 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivityHomeBinding
 import com.nest.nestplay.model.Genres.Companion.genres
 import com.nest.nestplay.model.ListMovieModel
 import com.nest.nestplay.model.TimeModel
+import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 import com.nest.nestplay.utils.Constants
 import java.util.Date
@@ -272,6 +275,18 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }else{
                         GetRecentsWatchMovies(movieList, movieListDate)
                     }
+                }
+                .addOnFailureListener { it
+                    println(it.message)
+                    if(it.message == Common.msgPermissionDENIED){
+                        println("Acesso negado")
+                        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                        val gson = Gson()
+                        val userJson = sharedPreferences.getString("user", null)
+                        val user = gson.fromJson(userJson, UserModel::class.java)
+                        println(user?.name)
+                    }
+                    println(it.cause)
                 }
         }
     }

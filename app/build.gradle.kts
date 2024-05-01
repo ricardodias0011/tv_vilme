@@ -61,6 +61,8 @@ dependencies {
 
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
 
+    implementation("com.google.code.gson:gson:2.8.8")
+
     implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")

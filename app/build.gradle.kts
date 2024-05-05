@@ -59,6 +59,13 @@ dependencies {
     implementation("pl.droidsonroids.gif:android-gif-drawable:1.2.28")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.11.0")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
+
     implementation("com.google.android.exoplayer:exoplayer:2.19.1")
 
     implementation("com.google.code.gson:gson:2.8.8")

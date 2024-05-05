@@ -8,7 +8,7 @@ data class MovieModel(
     val adult: Boolean = false,
     var backdrop_path: String = "",
     val first_air_date: String = "",
-    val genre_ids: List<Int> = listOf(),
+    val genre_ids: List<Int> = listOf(2024),
     val id: Int = 0,
     val name: String = "",
     val origin_country: List<String> = listOf(),

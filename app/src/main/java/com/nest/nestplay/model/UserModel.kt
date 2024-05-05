@@ -13,7 +13,8 @@ class UserModel (
     val status: String = "",
     val type: String = "",
     val currentScreens : List<String>? = null,
-    val screensAvailables : Int = 0
+    val screensAvailables : Int = 0,
+    val activeOnlineTv: Boolean? = false
     ): Parcelable {
     companion object {
         private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"

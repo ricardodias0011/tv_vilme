@@ -96,6 +96,10 @@ class GenreActivity : FragmentActivity() {
             customId = true
             query = query.whereEqualTo("distributed", "Netflix")
         }
+        if (gere == 8) {
+            customId = true
+            query = query.whereEqualTo("distributed", "Marvel")
+        }
         if (gere == 1) {
             customId = true
             query = query.whereEqualTo("original_language", "pt")

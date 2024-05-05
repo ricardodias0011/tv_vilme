@@ -13,15 +13,19 @@ import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.Row
 import androidx.leanback.widget.RowPresenter
+import com.nest.nestplay.model.ChannelTVModel
+import com.nest.nestplay.model.ListChannelTVModel
 import com.nest.nestplay.model.ListMovieModel
 import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.presenter.MovieListItemPresenter
+import com.nest.nestplay.presenter.itemTvListPresenter
 
 class ListFragment : RowsSupportFragment() {
 
-    private var itemSelectedListener: ((ListMovieModel.Movie) -> Unit)? = null
+    private var itemSelectedListener: ((ListMovieModel.Movie, String) -> Unit)? = null
     private var itemClickListener: ((ListMovieModel.Movie) -> Unit)? = null
-
+    private var itemTvOnlineClickListener: ((ChannelTVModel) -> Unit)? = null
+    private var itemTvOnlineSelectedListener: ((ChannelTVModel) -> Unit)? = null
     private var itemClickDetailListener: ((MovieModel) -> Unit)? = null
     private val itemPositionMap: MutableMap<Any, Int> = mutableMapOf()
 
@@ -70,6 +74,18 @@ class ListFragment : RowsSupportFragment() {
         rootAdapter.add(listRow)
     }
 
+    fun bindDataTvOnline(dataList: ListChannelTVModel) {
+        val arrayObjectAdapter = ArrayObjectAdapter(itemTvListPresenter())
+        dataList.list.forEach { movie ->
+            arrayObjectAdapter.add(movie)
+            itemPositionMap[movie] = itemPositionMap.size
+        }
+        val headerItem = HeaderItem(dataList.title)
+        val listRow = ListRow(headerItem, arrayObjectAdapter)
+        rootAdapter.add(listRow)
+    }
+
+
     fun bindMovieData(list: List<MovieModel>, title: String) {
         val arrayObjectAdapter = ArrayObjectAdapter(MovieItemPresenter())
 
@@ -82,13 +98,22 @@ class ListFragment : RowsSupportFragment() {
         rootAdapter.add(listRow)
     }
 
-    fun setOnContentSelectedListener(listener: (ListMovieModel.Movie) -> Unit) {
+    fun setOnContentSelectedListener(listener: (ListMovieModel.Movie, String) -> Unit) {
         this.itemSelectedListener = listener
     }
 
     fun setOnItemClickListener(listener: (ListMovieModel.Movie) -> Unit) {
         this.itemClickListener = listener
     }
+
+    fun setOnItemTvOnlineClickListener(listener: (ChannelTVModel) -> Unit) {
+        this.itemTvOnlineClickListener = listener
+    }
+
+    fun setOnContentTvOnlineSelectedListener(listener: (ChannelTVModel) -> Unit) {
+        this.itemTvOnlineSelectedListener = listener
+    }
+
 
     fun setOnItemDetailClickListener(listener: (MovieModel) -> Unit) {
         this.itemClickDetailListener = listener
@@ -101,10 +126,17 @@ class ListFragment : RowsSupportFragment() {
             rowViewHolder: RowPresenter.ViewHolder?,
             row: Row?
         ) {
-            if (item is ListMovieModel.Movie) {
-                itemSelectedListener?.invoke(item)
+            var headerItemText = ""
+            if (row is ListRow) {
+                headerItemText = row.headerItem?.name ?: ""
+                println("Header Item Text: $headerItemText")
             }
-
+            if (item is ListMovieModel.Movie) {
+                itemSelectedListener?.invoke(item, headerItemText)
+            }
+            if (item is ChannelTVModel) {
+                itemTvOnlineSelectedListener?.invoke(item)
+            }
         }
     }
 
@@ -122,11 +154,15 @@ class ListFragment : RowsSupportFragment() {
             if (item is MovieModel) {
                 itemClickDetailListener?.invoke(item)
             }
+            if (item is ChannelTVModel) {
+                itemTvOnlineClickListener?.invoke(item)
+            }
         }
     }
 
     fun clearAll() {
         rootAdapter.clear()
+        rootAdapter.notifyArrayItemRangeChanged(0, rootAdapter.size())
     }
 
     fun requestFocus(): View {

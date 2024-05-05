@@ -13,16 +13,16 @@ import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.Row
 import androidx.leanback.widget.RowPresenter
-import com.nest.nestplay.model.ListMovieModel
-import com.nest.nestplay.model.ListTvModel
-import com.nest.nestplay.presenter.MovieListItemPresenter
+import com.nest.nestplay.model.ChannelTVModel
+import com.nest.nestplay.model.ListChannelTVModel
+import com.nest.nestplay.presenter.itemTvListPresenter
 
 class ListLiveTvFragment: RowsSupportFragment() {
 
-    private var itemSelectedListener: ((ListTvModel.TvModel) -> Unit)? = null
-    private var itemClickListener: ((ListTvModel.TvModel) -> Unit)? = null
+    private var itemSelectedListener: ((ChannelTVModel) -> Unit)? = null
+    private var itemClickListener: ((ChannelTVModel) -> Unit)? = null
 
-    private var itemClickDetailListener: ((ListTvModel.TvModel) -> Unit)? = null
+    private var itemClickDetailListener: ((ChannelTVModel) -> Unit)? = null
     private val itemPositionMap: MutableMap<Any, Int> = mutableMapOf()
 
     private val listRowPresenter = object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM) {
@@ -58,8 +58,8 @@ class ListLiveTvFragment: RowsSupportFragment() {
         onItemViewClickedListener = ItemViewClickListener()
     }
 
-    fun bindData(dataList: ListMovieModel) {
-        val arrayObjectAdapter = ArrayObjectAdapter(MovieListItemPresenter())
+    fun bindData(dataList: ListChannelTVModel) {
+        val arrayObjectAdapter = ArrayObjectAdapter(itemTvListPresenter())
         dataList.list.forEach { movie ->
             arrayObjectAdapter.add(movie)
             itemPositionMap[movie] = itemPositionMap.size
@@ -69,7 +69,7 @@ class ListLiveTvFragment: RowsSupportFragment() {
         rootAdapter.add(listRow)
     }
 
-    fun bindMovieData(list: List<ListTvModel.TvModel>, title: String) {
+    fun bindMovieData(list: List<ListChannelTVModel>, title: String) {
         val arrayObjectAdapter = ArrayObjectAdapter(MovieItemPresenter())
 
         list.forEach { content ->
@@ -81,11 +81,11 @@ class ListLiveTvFragment: RowsSupportFragment() {
         rootAdapter.add(listRow)
     }
 
-    fun setOnContentSelectedListener(listener: (ListTvModel.TvModel) -> Unit) {
+    fun setOnContentSelectedListener(listener: (ChannelTVModel) -> Unit) {
         this.itemSelectedListener = listener
     }
 
-    fun setOnItemClickListener(listener: (ListTvModel.TvModel) -> Unit) {
+    fun setOnItemClickListener(listener: (ChannelTVModel) -> Unit) {
         this.itemClickListener = listener
     }
 
@@ -96,7 +96,7 @@ class ListLiveTvFragment: RowsSupportFragment() {
             rowViewHolder: RowPresenter.ViewHolder?,
             row: Row?
         ) {
-            if (item is ListTvModel.TvModel) {
+            if (item is ChannelTVModel) {
                 itemSelectedListener?.invoke(item)
             }
 
@@ -111,7 +111,7 @@ class ListLiveTvFragment: RowsSupportFragment() {
             rowViewHolder: RowPresenter.ViewHolder?,
             row: Row?
         ) {
-            if (item is ListTvModel.TvModel) {
+            if (item is ChannelTVModel) {
                 itemClickListener?.invoke(item)
             }
         }

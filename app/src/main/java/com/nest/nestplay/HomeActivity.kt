@@ -12,7 +12,9 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.text.HtmlCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.leanback.widget.BrowseFrameLayout
 import com.bumptech.glide.Glide
@@ -25,12 +27,21 @@ import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivityHomeBinding
+import com.nest.nestplay.model.ChannelTVModel
 import com.nest.nestplay.model.Genres.Companion.genres
+import com.nest.nestplay.model.LinksTvModel
+import com.nest.nestplay.model.ListChannelTVModel
 import com.nest.nestplay.model.ListMovieModel
+import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
+import com.nest.nestplay.model.parseM3uPlaylist
+import com.nest.nestplay.service.ApiClient
 import com.nest.nestplay.utils.Common
 import com.nest.nestplay.utils.Constants
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.util.Date
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -39,10 +50,10 @@ import javax.crypto.spec.SecretKeySpec
 class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.OnItemFocusChangeListener {
     private lateinit var binding: ActivityHomeBinding
     val MoviesListFragment = ListFragment()
-    val TvLiveListFragment = ListLiveTvFragment()
 
     var selectedMenu = Constants.MENU_HOME
     lateinit var navBar: BrowseFrameLayout
+
 
     lateinit var btnSearch: TextView
     lateinit var btnHome: TextView
@@ -52,12 +63,18 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     lateinit var btnGenres: TextView
     lateinit var btnFavs: TextView
     lateinit var loadingDialog: Dialog
-    var loading: Boolean = true
+    var loadingMovies: Boolean = true
     var allMoviesList = mutableListOf<ListMovieModel>()
 
     var URLPATHIMAGE = "https://image.tmdb.org/t/p/w500"
     var SIDE_MENU = false
 
+    var lastRowTitle = ""
+    var FirstGrouploaded = false
+    var SecondGrouploaded = false
+    var ThirdGrouploaded = false
+    var FourGrouploaded = false
+    var FiveGrouploaded = false
     lateinit var lastSelectedMenu: View
     lateinit var lastSelectedCategory: String
 
@@ -65,31 +82,91 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         addFragment(MoviesListFragment, R.id.mainMoviesHome)
 
         loadingDialog = Common.loadingDialog(this)
 
         navBar = findViewById(R.id.blfNavBar)
 
+        MoviesListFragment.setOnContentSelectedListener { movie, title ->
+            if (lastRowTitle != title) {
+                lastRowTitle = title
+                if (title == "Luz, Câmera, Ação" && !FirstGrouploaded) {
+                    FirstGrouploaded = true
+                    if (lastSelectedCategory == "Home") {
+                        fatchDataContent(10766, "Novelas")
+                    }
+                    fatchDataContent(80, "Mentes Criminosas")
+                    fatchDataContent(27, "Noites de terror")
+                }
+                if (title == "Mentes Criminosas" && !SecondGrouploaded) {
+                    SecondGrouploaded = true
+                    println("Mentes Criminosasss")
+                    fatchDataContent(5, "Animes")
+                    fatchDataContent(16, "Animação")
+                    fatchDataContent(10751, "Para toda familia")
+                }
+                if(title == "Animação" && !ThirdGrouploaded){
+                    ThirdGrouploaded = true
+                    var query = fetchMoviesAndUpdateList().limit(12)
+                        .whereEqualTo("distributed", "Netflix")
+                    fatchDataContentWidthQuery(query, "Netflix", 7)
+                    var query2 = fetchMoviesAndUpdateList().limit(12)
+                        .whereEqualTo("distributed", "Marvel")
+                    fatchDataContentWidthQuery(query2, "Heróis da Marvel", 8)
+                    fatchDataContent(10764, "Realitys")
+                }
+                if (title == "Netflix" && !FourGrouploaded) {
+                    FourGrouploaded = true
+                    fatchDataContent(878, "Ficção científica")
+                    fatchDataContent(10749, "Romances")
+                    fatchDataContent(37, "Faroeste")
+                }
+                if (title == "Romances" && !FiveGrouploaded) {
+                    FiveGrouploaded = true
+                    fatchDataContent(10402, "Música")
+                    fatchDataContent(99, "Documentário")
+                    fatchDataContent(10767, "Talk shows")
+                }
+            }
 
-        MoviesListFragment.setOnContentSelectedListener { movie ->
-            if(movie != null){
-                updateMainMovie(movie)
+            if (movie != null && movie is ListMovieModel.Movie) {
+                updateMainMovie(movie, false)
             }
         }
 
-        MoviesListFragment.setOnItemClickListener {movie ->
-            if(movie.isNoPartContent != null){
-                val intent = Intent(this, GenreActivity::class.java)
-                intent.putExtra("id", movie.isNoPartContent)
-                startActivity(intent)
-            }else{
-                val intent = Intent(this, DetailMovieActivity::class.java)
-                intent.putExtra("id", movie.id)
-                startActivity(intent)
+        MoviesListFragment.setOnContentTvOnlineSelectedListener { tv ->
+            if (tv != null && tv is ChannelTVModel) {
+                try {
+                    updateMainMovie(createListMovieModelFromTvItem(tv), true)
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Erro: 2", Toast.LENGTH_LONG).show()
+                }
             }
         }
+
+
+        MoviesListFragment.setOnItemTvOnlineClickListener { tv ->
+            val intent = Intent(this, VideoPlayActivity::class.java)
+            intent.putExtra("movie", createMovieModelFromTvItem(tv))
+            startActivity(intent)
+        }
+
+
+        MoviesListFragment.setOnItemClickListener { movie ->
+            if (movie is ListMovieModel.Movie) {
+                if (movie.isNoPartContent != null) {
+                    val intent = Intent(this, GenreActivity::class.java)
+                    intent.putExtra("id", movie.isNoPartContent)
+                    startActivity(intent)
+                } else {
+                    val intent = Intent(this, DetailMovieActivity::class.java)
+                    intent.putExtra("id", movie.id)
+                    startActivity(intent)
+                }
+            }
+        }
+
 
         ChangeTextCatogy("Home")
         onGetCategorys("Home", true)
@@ -109,14 +186,32 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnMovie = binding.btnMovies
         btnFavs = binding.btnFavs
         btnSearch = binding.btnSearch
-        btnSeries =  binding.btnSeries
-        btnGenres =  binding.btnGenres
+        btnSeries = binding.btnSeries
+        btnGenres = binding.btnGenres
         btnTvLive = binding.btnTv
+
+        val user = getCurrentUser()
+        if(user?.activeOnlineTv == true){
+            btnTvLive.visibility == View.VISIBLE
+        }else{
+            btnTvLive.visibility = View.GONE
+        }
+
+        btnTvLive.setOnKeyListener(this)
+        btnTvLive.onFocusChangeListener = onFocusChangeListener
+
+        btnTvLive.setOnClickListener {
+            selectedMenu = Constants.MENU_TV
+            ChangeTextCatogy("Tv online")
+            getListTvLive()
+        }
+
+
 
         btnHome.setOnKeyListener(this)
         btnHome.setOnClickListener {
             selectedMenu = Constants.MENU_HOME
-            ChangeTextCatogy("Home")
+            ChangeTextCatogy("Início")
             onGetCategorys("Home", true)
         }
         btnHome.onFocusChangeListener = onFocusChangeListener
@@ -164,12 +259,111 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
     private fun onGetCategorys(key: String, isHome: Boolean?) {
         clearList()
-        if(isHome == true){
+        MoviesListFragment.clearAll()
+        loadingMovies = true
+        FirstGrouploaded = false
+        SecondGrouploaded = false
+        ThirdGrouploaded = false
+        FourGrouploaded = false
+        FiveGrouploaded = false
+        if (isHome == true) {
             GetRecentsWatchList()
-        }else{
+        } else {
             GetPopularityMovies(key, true)
         }
         lastSelectedCategory = key
+    }
+
+    private fun getListTvLive() {
+        clearList()
+        clearMainMovie()
+        try {
+            loadingDialog.show()
+
+            var query=  fetchGetLinkUrlTv().limit(1).whereEqualTo("isActive", true)
+            query
+                .get()
+                .addOnSuccessListener { documents ->
+                    val firstDocument = documents.firstOrNull()
+                    println(firstDocument)
+                    if (firstDocument != null) {
+                        val firstMovie = firstDocument.toObject(LinksTvModel::class.java)
+                        if (firstMovie?.link != null) {
+                            val DecryptedLink = Common.decrypt(firstMovie?.link)
+                            val (baseUrl, endpoint) = Common.parseBaseUrlAndEndpoint(DecryptedLink)
+                            val fullUrl = "$baseUrl$endpoint"
+                            println(baseUrl)
+                            println(fullUrl)
+
+                            val apiService = ApiClient.getApiClient(baseUrl)
+                            apiService.fetchDataM3u(fullUrl).enqueue(object : Callback<String> {
+                                override fun onResponse(call: Call<String>, response: Response<String>) {
+                                    if (response.isSuccessful) {
+                                        val playlistText = response.body()
+                                        if (playlistText != null) {
+                                            val playlistItem = parseM3uPlaylist(playlistText)
+                                            val groupedItems =
+                                                playlistItem.groupBy { it.groupTitlePattern ?: "Outros" }
+                                            try {
+                                                groupedItems.map { (category, items) ->
+                                                    if (items.isNotEmpty()) {
+                                                        val listItem = ListChannelTVModel(
+                                                            list = items.toMutableList(),
+                                                            title = category
+                                                        )
+                                                        MoviesListFragment.bindDataTvOnline(listItem)
+                                                    }
+                                                }
+                                            } catch (e: Exception) {
+                                                Toast.makeText(
+                                                    applicationContext,
+                                                    "Erro: 14; Falha ao buscar canais",
+                                                    Toast.LENGTH_SHORT
+                                                ) .show()
+                                            }
+                                        }
+                                    }
+                                    loadingDialog.hide()
+                                }
+                                override fun onFailure(call: Call<String>, t: Throwable) {
+                                    loadingDialog.hide()
+                                    Toast.makeText(
+                                        applicationContext,
+                                        "Falha ao buscar canais",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    println(t)
+                                }
+                            })
+                        }
+                    }
+                }
+                .addOnFailureListener {
+                    loadingDialog.hide()
+                    Toast.makeText(
+                        applicationContext,
+                        "Falha ao buscar canais",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+        } catch (e: Exception) {
+            loadingDialog.hide()
+            println(e)
+            Toast.makeText(
+                applicationContext,
+                "Não foi possivel carregar lista de canais",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    fun getCurrentUser(): UserModel? {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        return user
     }
 
     override fun onKey(view: View?, i: Int, key_event: KeyEvent?): Boolean {
@@ -181,6 +375,13 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 when (view?.id) {
 
                     R.id.btn_search -> {
+                        closeMenu()
+                    }
+                    R.id.btn_tv -> {
+                        selectedMenu = Constants.MENU_TV
+                        view.isActivated = true
+                        lastSelectedMenu = view
+                        lastSelectedCategory = "Tv Online"
                         closeMenu()
                     }
                     R.id.btn_home -> {
@@ -244,17 +445,19 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     }
 
     override fun onItemFocused(movie: ListMovieModel.Movie, itemView: Int) {
-        updateMainMovie(movie)
+        updateMainMovie(movie, false)
     }
 
     private fun clearList() {
-        binding.mainTitle.setText("")
-        binding.description.setText("")
-        binding.infosMainMovie.setText("")
-        Glide.with(this)
-            .clear(binding.imgBanner)
+        allMoviesList = mutableListOf<ListMovieModel>()
         allMoviesList.clear()
         MoviesListFragment.clearAll()
+
+        binding.mainTitle.text = ""
+        binding.description.text = ""
+        binding.infosMainMovie.text = ""
+        Glide.with(this)
+            .clear(binding.imgBanner)
     }
 
 
@@ -293,6 +496,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         }
     }
     private fun GetRecentsWatchMovies(list: List<Int>, dates: List<Timestamp>) {
+        clearList()
         var query = fetchMoviesAndUpdateList()
             .whereIn("id", list)
             .limit(22)
@@ -303,7 +507,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     val firstDocument = documents.firstOrNull()
                     if (firstDocument != null) {
                         val firstMovie = firstDocument.toObject(ListMovieModel.Movie::class.java)
-                        updateMainMovie(firstMovie)
+                        updateMainMovie(firstMovie, false)
                     }
                     if(document != null){
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
@@ -332,6 +536,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
     private fun GetPopularityMovies(type: String?, updateFirstBanner: Boolean?) {
         loadingDialog.show()
+        if(updateFirstBanner == true){
+            clearList()
+        }
         val idCategory = 101
         var query = fetchMoviesAndUpdateList()
             .orderBy("popularity", Query.Direction.DESCENDING)
@@ -349,7 +556,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 val firstDocument = documents.firstOrNull()
                 if (firstDocument != null && updateFirstBanner == true) {
                     val firstMovie = firstDocument.toObject(ListMovieModel.Movie::class.java)
-                    updateMainMovie(firstMovie)
+                    updateMainMovie(firstMovie, false)
                 }
                 for (document in documents){
 
@@ -366,7 +573,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
                 }
                 loadingDialog.dismiss()
-                GetMainMovies()
+//                GetMainMovies()
+                fatchDataContent(28, "Luz, Câmera, Ação")
+                fatchDataContent(35, "Comédia")
             }
             .addOnFailureListener { it
                 if(it.message == Common.msgPermissionDENIED){
@@ -377,97 +586,8 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
 
-    private fun GetMainMovies() {
-        val idCategory = 28
-
+    private fun fatchDataContent(idCategory: Int, title: String){
         var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Luz, Câmera, Ação")
-                }
-                GetComedyMovies()
-            }
-    }
-
-    private fun GetComedyMovies() {
-        val idCategory = 35
-
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .limit(10)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Comédia")
-                }
-                GetNovela()
-            }
-    }
-
-
-    private fun GetNovela() {
-        val idCategory = 10766
-
-        if(lastSelectedCategory != "Home"){
-            getCrimes()
-            return
-        }
-
-        var query=  fetchMoviesAndUpdateList() .limit(20)
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Novelas")
-                }
-                getCrimes()
-            }
-    }
-
-
-
-    private fun getCrimes() {
-        val idCategory = 80
-
-        var query=  fetchMoviesAndUpdateList() .limit(20)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
@@ -485,21 +605,17 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 if(!movieList.isEmpty()){
                     movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Mentes Criminosas")
+                    UpdateListItem(movieList, title)
                 }
-                getVotes()
             }
     }
 
-    private fun getVotes() {
-        val idCategory = 100
-        var query=  fetchMoviesAndUpdateList() .limit(20)
+    private fun fatchDataContentWidthQuery(query:  Query, title: String, idCategory: Int){
+        var modifiedQuery = query
         if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
+            modifiedQuery = query.whereEqualTo("contentType", lastSelectedCategory)
         }
-        query
-            .whereGreaterThan("vote_average", 7)
-            .orderBy("vote_count", Query.Direction.DESCENDING)
+        modifiedQuery
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
@@ -512,349 +628,69 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 if(!movieList.isEmpty()){
                     movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Recomendados pela Crítica")
+                    UpdateListItem(movieList, title)
                 }
-                GetHorrorMovies()
             }
     }
 
-    private fun GetHorrorMovies() {
-        val idCategory = 27
-        var query=  fetchMoviesAndUpdateList() .limit(15)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Noites de terror")
-                }
-                GetAnimes()
-            }
-    }
-
-
-    private fun GetAnimes() {
-        val idCategory = 5
-        var query=  fetchMoviesAndUpdateList().limit(20)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .limit(10)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Animes")
-                }
-                GetNetflixMovies()
-            }
-    }
-
-    private fun GetNetflixMovies() {
-        val idCategory = 7
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereEqualTo("distributed", "Netflix")
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "NETFLIX")
-                }
-                getKids()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-    private fun getKids() {
-        val idCategory = 10762
-        var query=  fetchMoviesAndUpdateList() .limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList, "Animação")
-                }
-                GetForFamily()
-            }
-    }
-
-
-    private fun GetForFamily() {
-        val idCategory = 10751
-        var query=  fetchMoviesAndUpdateList() .limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .limit(10)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Para toda familia")
-                }
-                GetNacionalMovies()
-            }
-    }
-
-    private fun GetNacionalMovies() {
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereEqualTo("original_language", "pt")
-            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L))
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(0))
-                    UpdateListItem(movieList,"Nacionais")
-                }
-                GetScienceFictionMovies()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-
-    private fun GetScienceFictionMovies() {
-        val idCategory = 878
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Ficção científica")
-                }
-                GetRomance()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-    private fun GetRomance() {
-        val idCategory = 10749
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-
-
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Romances")
-                }
-                GetWestern()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-    private fun GetWestern() {
-        val idCategory = 37
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Faroeste")
-                }
-                GetMusic()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-    private fun GetMusic() {
-        val idCategory = 10402
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Música")
-                }
-                GetDocs()
-            }
-            .addOnFailureListener {
-            }
-    }
-
-    private fun GetDocs() {
-        val idCategory = 99
-        var query=  fetchMoviesAndUpdateList().limit(12)
-        if(lastSelectedCategory != "Home"){
-            query = query.whereEqualTo("contentType", lastSelectedCategory)
-        }
-        query
-            .whereArrayContains("genre_ids", idCategory)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
-                    UpdateListItem(movieList,"Documentário")
-                }
-            }
-            .addOnFailureListener {
-            }
-    }
 
     private fun UpdateListItem(movieList: MutableList<ListMovieModel.Movie>, title: String) {
         MoviesListFragment.bindData(ListMovieModel(movieList.toMutableList(), title))
     }
-
-
-    private fun updateMainMovie(movie: ListMovieModel.Movie){
-        if(movie.isNoPartContent != null) {
-            return
-        }
-        var date = ""
-        if(movie?.contentType == "Serie" && movie.first_air_date != null){
-            binding.mainTitle.setText(movie?.name)
-            date = movie.first_air_date
-        }else{
-            binding.mainTitle.setText(movie?.title)
-            date = movie.release_date
-        }
-
-        val genresList = genres.filter { it.id in movie.genre_ids }
-        val genresNames = genresList.joinToString(" ● ") { "<font color='#08B44E'> ${it.name}</font>" }
-        if(genresNames != null){
-            binding.infosMainMovie.text = HtmlCompat.fromHtml("$genresNames - ${date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
-        }
-
-        binding.mainTitle.maxLines = 2
-        binding.description.maxLines = 3
-
-        binding.description.setText(movie.overview)
+    private fun clearMainMovie() {
+        binding.mainTitle.setText("")
+        binding.infosMainMovie.text = ""
+        binding.description.text = ""
+        binding.infosMainMovie.setText("")
         Glide.with(this)
-            .load("https://image.tmdb.org/t/p/w1280" + movie.backdrop_path)
-            .into(binding.imgBanner)
+            .clear(binding.imgBanner)
+    }
+
+    private fun updateMainMovie(movie: ListMovieModel.Movie, ownUrl: Boolean?){
+        try {
+            if(movie?.isNoPartContent != null) {
+                return
+            }
+            var date = ""
+            if(movie?.contentType == "Serie" && movie?.first_air_date != null){
+                binding.mainTitle.setText(movie?.name)
+                date = movie.first_air_date
+            }else{
+                binding.mainTitle.setText(movie?.title)
+                date = movie.release_date
+            }
+
+            val genresList = genres.filter { it.id in movie.genre_ids }
+            val genresNames = genresList.joinToString(" ● ") { "<font color='#08B44E'> ${it.name}</font>" }
+            if(genresNames != null){
+                try{
+                    binding.infosMainMovie.text = HtmlCompat.fromHtml("$genresNames - ${date.slice(0..3)}", HtmlCompat.FROM_HTML_MODE_LEGACY)
+                }
+                catch (e: Exception){
+                    binding.infosMainMovie.text = ""
+                }
+            }
+
+            binding.mainTitle.maxLines = 2
+            binding.description.maxLines = 3
+
+            binding.description.setText(movie?.overview)
+            var urlImage = "https://image.tmdb.org/t/p/w1280" + movie?.backdrop_path
+            if(ownUrl == true){
+                urlImage = movie.backdrop_path
+            }
+            try {
+                Glide.with(this)
+                    .load(urlImage)
+                    .into(binding.imgBanner)
+            }catch (e: Exception){
+                Toast.makeText(this,"Erro: Load image", Toast.LENGTH_LONG).show()
+            }
+
+        }catch (e: Exception){
+            Toast.makeText(this,"Erro: Focus item", Toast.LENGTH_LONG).show()
+
+        }
     }
 
     private fun fetchMoviesAndUpdateList(): CollectionReference {
@@ -863,13 +699,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         return docRef
     }
 
-    private fun addFragment(similarFragment: ListFragment, containerId: Int) {
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.add(containerId, similarFragment)
-        transaction.commit()
+    private fun fetchGetLinkUrlTv(): CollectionReference {
+        val db = Firebase.firestore
+        val docRef = db.collection("onlineTvLinks")
+        return docRef
     }
-    private fun updateMoviesList(allMoviesList: MutableList<ListMovieModel>) {
-//        MoviesListFragment.bindData(allMoviesList)
+    private fun addFragment(fragment: Fragment, containerId: Int) {
+        supportFragmentManager.beginTransaction()
+            .replace(containerId, fragment)
+            .commit()
     }
 
     fun switchToLastSelectedMenu() {
@@ -900,6 +738,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnSeries.text = "Séries"
         binding.btnFavs.text = "Minha lista"
         binding.btnGenres.text = "Género"
+        binding.btnTv.text = "Tv Online"
 
         navBar.requestLayout()
         navBar.setBackgroundResource(R.drawable.banner_gradient)
@@ -914,6 +753,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnSeries.text = ""
         binding.btnFavs.text = ""
         binding.btnGenres.text = ""
+        binding.btnTv.text = ""
         navBar.requestLayout()
         navBar.setBackgroundResource(R.drawable.no_selected_bg)
         navBar.layoutParams.width = Common.getWidthInPercent(this, 7)
@@ -945,6 +785,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         finish()
     }
 
+
     fun createMoreItem(idCategory: Int): ListMovieModel.Movie {
        var iconMoreItem = ListMovieModel.Movie(
            adult = false,
@@ -974,6 +815,63 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
         return iconMoreItem
     }
+
+    private fun createListMovieModelFromTvItem(itemTv: ChannelTVModel): ListMovieModel.Movie {
+        val formattedDate = "2024-11-11"
+        return ListMovieModel.Movie(
+            adult = false,
+            backdrop_path = itemTv?.tvgLogoUrl ?: "",
+            first_air_date = formattedDate,
+            genre_ids = listOf(2024),
+            id = 5,
+            name = itemTv.tvgName ?: "",
+            origin_country = listOf(),
+            original_language = "",
+            original_name = "",
+            original_title = "",
+            overview = "",
+            popularity = 0.0,
+            poster_path = itemTv?.tvgLogoUrl ?: "",
+            release_date = formattedDate,
+            title = itemTv?.tvgName ?: "",
+            vote_average = 0.0,
+            vote_count = 0,
+            url = itemTv?.streamUrl ?: "",
+            original_title_lowcase = "",
+            contentType = "Movie",
+            subtitles = listOf(),
+            urls_subtitle = listOf()
+        )
+    }
+
+    private fun createMovieModelFromTvItem(itemTv: ChannelTVModel): MovieModel {
+        val formattedDate = "2024-11-11"
+        return MovieModel(
+            adult = false,
+            backdrop_path = itemTv.tvgLogoUrl ?: "",
+            first_air_date =formattedDate,
+            genre_ids = listOf(2024),
+            id = 5,
+            name = itemTv?.tvgName ?: "",
+            origin_country = listOf(),
+            original_language = "",
+            original_name = "",
+            original_title = "",
+            overview = "",
+            popularity = 0.0,
+            poster_path = itemTv.tvgLogoUrl ?: "",
+            release_date = formattedDate,
+            title = itemTv.tvgName ?: "",
+            vote_average = 0.0,
+            vote_count = 0,
+            url = itemTv.streamUrl ?: "",
+            original_title_lowcase = "",
+            contentType = "Movie",
+            subtitles = listOf(),
+            urls_subtitle = listOf()
+        )
+    }
+
 
     fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
         var decripeted = ""

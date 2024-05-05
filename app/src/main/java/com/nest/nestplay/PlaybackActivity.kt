@@ -133,7 +133,6 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
         handler.post(runnable!!)
-
         jumpRunnable = object : Runnable {
             override fun run() {
                 val currentPosition = transporGlue.getCurrentPosition()

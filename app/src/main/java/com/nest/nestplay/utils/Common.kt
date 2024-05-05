@@ -20,6 +20,7 @@ class Common {
 
         var msgPermissionDENIED = "PERMISSION_DENIED: Missing or insufficient permissions."
 
+        var imgDefaultMainBg = "https://media.istockphoto.com/id/1332097112/pt/foto/the-black-and-silver-are-light-gray-with-white-the-gradient-is-the-surface-with-templates.jpg?s=612x612&w=0&k=20&c=9XnsxOC-p39iiiL-BgBvMsxUfQ5TaB5eXF8UpcYB_dg="
         fun getWidthInPercent(context: Context, percent: Int): Int {
             val width = context.resources.displayMetrics.widthPixels ?: 0
             return (width * percent) / 100
@@ -56,6 +57,20 @@ class Common {
                     ex.printStackTrace()
                 }
             return urlDecodeString
+        }
+
+        fun parseBaseUrlAndEndpoint(url: String): Pair<String, String> {
+            val cleanedUrl = url.trimEnd('/')
+            val firstSlashIndex = cleanedUrl.indexOf('/', startIndex = "https://".length)
+
+            if (firstSlashIndex == -1) {
+                return Pair(cleanedUrl, "")
+            } else {
+                val baseUrl = cleanedUrl.substring(0, firstSlashIndex)
+                val endpoint = cleanedUrl.substring(firstSlashIndex)
+
+                return Pair(baseUrl, endpoint)
+            }
         }
 
         fun getIpAddress(context: Context): String? {

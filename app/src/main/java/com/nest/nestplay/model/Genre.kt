@@ -33,7 +33,8 @@ class Genres {
             Genre(10767, "Tak show"),
             Genre(10768, "Guerra e Política"),
             Genre(37, "Faroeste"),
-            Genre(5, "Anime")
+            Genre(5, "Anime"),
+            Genre(2024, "TV Online")
         )
     }
 }

@@ -12,7 +12,9 @@ class UserModel (
     val expirePlanDate: Timestamp? = null,
     val status: String = "",
     val type: String = "",
-): Parcelable {
+    val currentScreens : List<String>? = null,
+    val screensAvailables : Int = 0
+    ): Parcelable {
     companion object {
         private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
 

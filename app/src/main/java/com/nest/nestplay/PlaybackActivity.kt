@@ -11,18 +11,28 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.view.isVisible
 import androidx.leanback.app.VideoSupportFragment
 import androidx.leanback.app.VideoSupportFragmentGlueHost
+import androidx.leanback.widget.ArrayObjectAdapter
+import androidx.leanback.widget.ClassPresenterSelector
+import androidx.leanback.widget.HeaderItem
+import androidx.leanback.widget.ListRow
+import androidx.leanback.widget.ListRowPresenter
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.nest.nestplay.model.ListEpisodesModel
 import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
+import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.player.BasicMediaPlayerAdpter
 import com.nest.nestplay.player.CustomTransportControlGlue
+import com.nest.nestplay.presenter.EpisodeosPresenter
+import com.nest.nestplay.utils.Common
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
@@ -36,12 +46,19 @@ class PlaybackFragment : VideoSupportFragment() {
     private val handler = Handler(Looper.getMainLooper())
 
     private var runnable: Runnable? = null
+    private var sesonMovieId = ""
+    private val handlerScreenVerif = Handler(Looper.getMainLooper())
+    private var runnableScreenVerify: Runnable? = null
+    private var toVerify = false
 
     private val jumpHandler = Handler(Looper.getMainLooper())
     private var jumpRunnable: Runnable? = null
     private var tojump = false
+    private var movieDate:  MovieModel? = null
 
     private var tojumpLong = true
+
+    private var CanJumpTime = true
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +68,7 @@ class PlaybackFragment : VideoSupportFragment() {
         } else {
             arguments?.getParcelable<MovieModel>("movie")
         }
-
+        updateAndVerifyScreens(false)
         val playerAdapter = BasicMediaPlayerAdpter(requireContext())
         playerAdapter.setOnPreparedListener {
             if (data != null) {
@@ -59,19 +76,51 @@ class PlaybackFragment : VideoSupportFragment() {
             } else {
             }
         }
+        view?.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) {
+                CanJumpTime = true
+            }
+        }
+        movieDate = data
 
+        sesonMovieId = Common.getIpAddress(requireContext()).toString()
 
         transporGlue = CustomTransportControlGlue(
             context = requireContext(),
             playerAdpter = BasicMediaPlayerAdpter(requireContext())
         )
         transporGlue.host = VideoSupportFragmentGlueHost(this)
-        println(data?.url)
+
         transporGlue.playerAdapter.setDataSource(Uri.parse(data?.url))
         transporGlue.loadMovieInfo(data)
 
         transporGlue.playerAdapter.play()
 
+        transporGlue.playerAdapter.mediaPlayer.setOnCompletionListener {
+            if (movieDate?.contentType == "Serie"){
+                var nextEpisode = data?.listEpsodes?.find { it.ep_number == data.current_ep?.plus(1) }
+
+                if (nextEpisode != null) {
+                    println(nextEpisode)
+                    movieDate?.current_ep = nextEpisode.ep_number
+                    movieDate?.url = Common.decrypt(nextEpisode.url)
+                    movieDate?.subtitles = nextEpisode?.subtitles
+                    movieDate?.listEpsodes = movieDate?.listEpsodes
+                    movieDate?.contentType = "Serie"
+                    try {
+                        transporGlue.playerAdapter.reset()
+                        transporGlue.playerAdapter.setDataSource(Uri.parse(movieDate?.url))
+                        transporGlue.loadMovieInfo(movieDate)
+                        transporGlue.playerAdapter.play()
+                    }catch (e: Exception){
+                        println(e)
+                    }
+
+                } else {
+
+                }
+            }
+        }
         runnable = object : Runnable {
             val currentPosition = transporGlue.getCurrentPosition()
             override fun run() {
@@ -102,33 +151,111 @@ class PlaybackFragment : VideoSupportFragment() {
         }
         jumpHandler.post(jumpRunnable!!)
 
-        setOnKeyInterceptListener { view, keyCode, event ->
-            val currentPosition = transporGlue.getCurrentPosition()
-            if(isControlsOverlayVisible || event.repeatCount > 0 ){
-                if(data != null && currentPosition > 30000 && tojumpLong){
-                    isShowOrHideControlsOverlayOnUserInteraction = true
-                    tojumpLong = false
-                    ResetToJumPLogn()
-                    GeteCurrentTime(currentPosition, data, null)
+
+        runnableScreenVerify = object : Runnable {
+            override fun run() {
+                if(data != null){
+                    if(!toVerify) {
+                        updateAndVerifyScreens(false)
+                        handlerScreenVerif.postDelayed(this, 7 * 60 * 1000)
+                    }
                 }
-            }else {
-                when(keyCode){
-                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        isShowOrHideControlsOverlayOnUserInteraction = event.action != KeyEvent.ACTION_DOWN
-                        if(event.action == KeyEvent.ACTION_DOWN){
-                            animatedIndicator(fastForwardIndicatorView)
+            }
+        }
+        handlerScreenVerif.post(runnable!!)
+
+        setOnKeyInterceptListener { view, keyCode, event ->
+            if (CanJumpTime) {
+                val currentPosition = transporGlue.getCurrentPosition()
+                if(isControlsOverlayVisible || event.repeatCount > 0 ){
+                    if(data != null && currentPosition > 30000 && tojumpLong){
+                        isShowOrHideControlsOverlayOnUserInteraction = true
+                        tojumpLong = false
+                        println("Avanço")
+                        ResetToJumPLogn()
+                        GeteCurrentTime(currentPosition, data, null)
+                    }
+                    println(event)
+                    when(keyCode){
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            val newPosition = currentPosition + 10_000
+                            transporGlue.playerAdapter.seekTo(newPosition)
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            val newPosition = currentPosition - 10_000
+                            transporGlue.playerAdapter.seekTo(newPosition)
                         }
                     }
-                    KeyEvent.KEYCODE_DPAD_LEFT -> {
-                        isShowOrHideControlsOverlayOnUserInteraction = event.action != KeyEvent.ACTION_DOWN
-                        if(event.action == KeyEvent.ACTION_DOWN){
-                            animatedIndicator(rewindIndicatorView)
+                }
+                else {
+                    when(keyCode){
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            isShowOrHideControlsOverlayOnUserInteraction = event.action != KeyEvent.ACTION_DOWN
+                            if(event.action == KeyEvent.ACTION_DOWN){
+                                animatedIndicator(fastForwardIndicatorView)
+                            }
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            isShowOrHideControlsOverlayOnUserInteraction = event.action != KeyEvent.ACTION_DOWN
+                            if(event.action == KeyEvent.ACTION_DOWN){
+                                animatedIndicator(rewindIndicatorView)
+                            }
                         }
                     }
                 }
             }
 
             transporGlue.onKey(view, keyCode, event)
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setOnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
+            println(item)
+            println(row)
+            println("TESTE")
+            try {
+                println(item.javaClass.simpleName)
+            }catch (e: Exception){
+                println(e)
+            }
+
+            if(item is ListEpisodesModel){
+                CanJumpTime = false
+            }else{
+                CanJumpTime = true
+            }
+        }
+
+        setOnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
+            if(item is ListEpisodesModel && movieDate?.current_ep != item.ep_number){
+                movieDate?.current_ep = item.ep_number
+                movieDate?.url = Common.decrypt(item.url)
+                movieDate?.subtitles = item?.subtitles
+                try {
+                    transporGlue.host.hideControlsOverlay(true)
+                    transporGlue.playerAdapter.reset()
+                    transporGlue.playerAdapter.setDataSource(Uri.parse(movieDate?.url))
+                    transporGlue.loadMovieInfo(movieDate)
+                    transporGlue.playerAdapter.play()
+                }catch (e: Exception){
+                    println(e)
+                }
+            }
+        }
+
+        if(movieDate?.listEpsodes != null){
+            (adapter.presenterSelector as ClassPresenterSelector).addClassPresenter(
+                ListRow::class.java,
+                ListRowPresenter()
+            )
+            val presenterSelector = ArrayObjectAdapter(EpisodeosPresenter())
+            movieDate?.listEpsodes?.forEach {
+                presenterSelector.add(it)
+            }
+            val row = ListRow(1L, HeaderItem("Episódios"), presenterSelector)
+            (adapter as ArrayObjectAdapter).add(row)
         }
     }
 
@@ -324,9 +451,67 @@ class PlaybackFragment : VideoSupportFragment() {
         }
     }
 
+    fun updateAndVerifyScreens(remove: Boolean?) {
+        val auth = Firebase.auth
+        if (auth.currentUser != null) {
+            val db = Firebase.firestore
+            val docRef = db.collection("users")
+            auth.uid?.let {id ->
+                docRef
+                    .document(id)
+                    .get()
+                    .addOnSuccessListener{document ->
+
+
+                        val user = document.toObject(UserModel::class.java)
+                        val currentScreens = user?.currentScreens ?: emptyList()
+                        val csSize = currentScreens.size
+                        val screensAvailables = user?.screensAvailables ?: 0
+
+                        var listSeassonDate = mutableListOf<String>()
+
+                        for (screen in currentScreens){
+                            if(sesonMovieId != screen){
+                                listSeassonDate.add(screen)
+                            }
+                        }
+                        if(remove == true){
+                            val updatedScreens = listSeassonDate.toMutableList().apply {
+                                remove(sesonMovieId)
+                            }
+                            docRef
+                                .document(id)
+                                .update(
+                                    mapOf(
+                                        "currentScreens" to updatedScreens
+                                    )
+                                )
+                        }else{
+                            if (csSize < screensAvailables) {
+                                val updatedScreens = listSeassonDate.toMutableList().apply {
+                                    add(sesonMovieId)
+                                }
+                                docRef
+                                    .document(id)
+                                    .update(
+                                        mapOf(
+                                            "currentScreens" to updatedScreens
+                                        )
+                                    )
+                            }else {
+                                Toast.makeText(requireContext(), "Máximo de telas simultâneas excedido", Toast.LENGTH_LONG).show()
+                                requireActivity().finish()
+                            }
+                        }
+                    }
+
+            }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-
+        updateAndVerifyScreens(true)
         transporGlue.playerAdapter.stop()
         transporGlue.removePlayerCallback(null)
         jumpRunnable?.let {
@@ -336,7 +521,15 @@ class PlaybackFragment : VideoSupportFragment() {
             handler.removeCallbacks(it)
         }
 
+        runnableScreenVerify?.let {
+            handlerScreenVerif.removeCallbacks(it)
+        }
+
+        runnableScreenVerify = null
         runnable = null
         jumpRunnable = null
+        tojumpLong = true
+        tojump = false
+        toVerify = false
     }
 }

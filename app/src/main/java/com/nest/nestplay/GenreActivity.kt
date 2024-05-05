@@ -1,6 +1,7 @@
 package com.nest.nestplay
 
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
@@ -8,13 +9,16 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
 import com.nest.nestplay.adpters.GenreListAdpter
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivityGenreBinding
 import com.nest.nestplay.model.Genre
 import com.nest.nestplay.model.Genres
 import com.nest.nestplay.model.ListMovieModel
+import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 
 class GenreActivity : FragmentActivity() {
@@ -30,10 +34,14 @@ class GenreActivity : FragmentActivity() {
     var lastVisible: Double? = null
     var lastVisibleGet: Boolean? = true
 
+    var initIdGenry: Int? = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGenreBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        initIdGenry = intent.getIntExtra("id", 0)
 
         loadingDialog = Common.loadingDialog(this)
         loadingDialog.show()
@@ -70,24 +78,44 @@ class GenreActivity : FragmentActivity() {
                 idGenreSelected = item.id
             }
         }
-
-        GetMovieListFavs(0, true)
+        val genreId = initIdGenry ?: 0
+        idGenreSelected = genreId
+        GetMovieListFavs(genreId, true)
     }
 
     private fun GetMovieListFavs(gere: Int, clear: Boolean?) {
 
+        var customId = false
 
         if (clear == true) {
             listMovies.clear()
         }
 
         var query = fetchMoviesList().limit(15)
-
-        if (gere != 0) {
+        if (gere == 7) {
+            customId = true
+            query = query.whereEqualTo("distributed", "Netflix")
+        }
+        if (gere == 1) {
+            customId = true
+            query = query.whereEqualTo("original_language", "pt")
+        }
+        if (gere == 100) {
+            customId = true
+            query = query.whereGreaterThan("vote_average", 7)
+        }
+        if (gere == 101) {
+            customId = true
+            query = query.orderBy("popularity", Query.Direction.DESCENDING)
+        }
+        if (gere != 0 && !customId) {
             query = query.whereArrayContains("genre_ids", gere)
         }
         if (lastVisible != null && clear == false) {
-            query = query.orderBy("popularity").startAfter(lastVisible)
+            if(gere != 101){
+                query = query.orderBy("popularity")
+            }
+            query = query.startAfter(lastVisible)
         }
 
         query.get()
@@ -117,6 +145,9 @@ class GenreActivity : FragmentActivity() {
                     loadingDialog.dismiss()
             }
             .addOnFailureListener { e ->
+                if(e.message == Common.msgPermissionDENIED){
+                    accessDenied()
+                }
                 loadingDialog.dismiss()
             }
     }
@@ -125,5 +156,17 @@ class GenreActivity : FragmentActivity() {
         val db = Firebase.firestore
         val docRef = db.collection("catalog")
         return docRef
+    }
+
+    fun accessDenied () {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
     }
 }

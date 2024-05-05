@@ -9,7 +9,7 @@
                 android:color="@color/color_white"/>
             <corners android:radius="4dp"/>
             <solid
-                android:color="@color/default_background"/>
+                android:color="#0E0E0E"/>
         </shape>
     </item>
 
@@ -18,10 +18,10 @@
             android:shape="rectangle">
             <stroke
                 android:width="2dp"
-                android:color="@color/default_background"/>
+                android:color="#202020"/>
             <corners android:radius="4dp"/>
             <solid
-                android:color="@color/default_background"/>
+                android:color="#202020"/>
         </shape>
     </item>
 </selector>

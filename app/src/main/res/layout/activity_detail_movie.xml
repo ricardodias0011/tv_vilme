@@ -130,7 +130,6 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:focusedByDefault="true"
-            android:nextFocusDown="@id/playBeginning"
             android:padding="8dp"
             android:text="Assistir"
             android:textAlignment="textStart"
@@ -151,7 +150,6 @@
             android:drawablePadding="8dp"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:nextFocusDown="@id/more_like_this"
             android:padding="8dp"
             android:text="Assistir do início"
             android:textAlignment="textStart"
@@ -171,7 +169,6 @@
             android:clickable="true"
             android:drawableLeft="@drawable/info_selector_icon"
             android:focusable="true"
-            android:nextFocusDown="@id/play"
             android:padding="8dp"
             android:text=""
             android:textAllCaps="false"
@@ -210,30 +207,30 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="10dp"
+            android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
             android:background="@drawable/selector_spinner"
             android:layout_marginTop="15dp"
             app:layout_constraintStart_toStartOf="@+id/guideline_start"
             app:layout_constraintTop_toBottomOf="@+id/more_like_this" />
-        <TextView
-            android:id="@+id/episodes_text"
-            android:layout_width="0dp"
+
+
+        <Spinner
+            android:id="@+id/spinner_select_ep_number"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Episódios"
-            android:textColor="#fff"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="@+id/guideline_start"
-            app:layout_constraintTop_toBottomOf="@+id/spinner_select_temp"
-            app:layout_constraintWidth_default="percent"
-            app:layout_constraintWidth_percent=".4" />
+            android:background="@drawable/selector_spinner"
+            android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
+            android:nextFocusForward="@id/more_episodes_serie"
+            android:padding="10dp"
+            android:layout_marginLeft="10dp"
+            app:layout_constraintStart_toEndOf="@+id/spinner_select_temp"
+            app:layout_constraintTop_toTopOf="@+id/spinner_select_temp" />
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/more_episodes_serie"
             android:layout_width="0dp"
             android:layout_height="90dp"
-            android:focusable="false"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/episodes_text"
+            app:layout_constraintTop_toBottomOf="@+id/spinner_select_ep_number"
             app:layout_constraintWidth_default="percent" />
 
         <androidx.fragment.app.FragmentContainerView

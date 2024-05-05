@@ -172,7 +172,19 @@
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />
-
+            <TextView
+                android:id="@+id/btn_tv"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/ic_selector_live_tv"
+                android:drawablePadding="16dp"
+                android:focusableInTouchMode="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
             <TextView
                 android:id="@+id/btn_movies"
                 android:layout_width="match_parent"
@@ -200,6 +212,7 @@
                 android:gravity="center_vertical"
                 android:text=""
                 android:textColor="@drawable/menu_text" />
+
             <TextView
                 android:id="@+id/btn_genres"
                 android:layout_width="match_parent"

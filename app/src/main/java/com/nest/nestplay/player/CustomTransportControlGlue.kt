@@ -32,7 +32,7 @@ class CustomTransportControlGlue(
         }
     }
 
-    private val qualityChangerAction = object : PlaybackControlsRow.ShuffleAction(context) {
+    private val qualityChangerAction = object : PlaybackControlsRow.MoreActions(context) {
         init {
             icon = ContextCompat.getDrawable(context, R.drawable.ic_sliders)
         }
@@ -71,7 +71,7 @@ class CustomTransportControlGlue(
             forwardAction -> playerAdapter.fastForward()
             rewindAction -> playerAdapter.rewind()
 //            subtitlesAction -> playerAdapter.subtitle(context, currentMovie)
-            qualityChangerAction -> playerAdapter.highQuality(context)
+//            qualityChangerAction -> playerAdapter.highQuality(context)
             else -> super.onActionClicked(action)
         }
         onUpdateProgress()
@@ -107,7 +107,7 @@ class CustomTransportControlGlue(
         if(movie?.contentType == "Serie"){
             title = movie?.name
             if (movie?.current_ep != 0 || movie?.current_ep != null){
-                title = title as String? + " EP: ${movie?.current_ep}"
+                title = title as String? + " EP: ${movie?.current_ep} TP: ${movie?.season}"
             }
         }else{
             title = movie?.title

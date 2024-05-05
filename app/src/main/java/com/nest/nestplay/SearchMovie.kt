@@ -1,5 +1,7 @@
 package com.nest.nestplay
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -15,9 +17,12 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivitySearchMovieBinding
 import com.nest.nestplay.model.ListMovieModel
+import com.nest.nestplay.model.UserModel
+import com.nest.nestplay.utils.Common
 
 class SearchMovie : FragmentActivity() {
 
@@ -137,6 +142,12 @@ class SearchMovie : FragmentActivity() {
                 }
                 adpterMovie.notifyDataSetChanged()
             }
+            .addOnFailureListener { it
+                if(it.message == Common.msgPermissionDENIED){
+                    println("msgPermissionDENIED")
+                    accessDenied()
+                }
+            }
     }
 
     private fun fetchMoviesAndUpdateList(): CollectionReference {
@@ -156,6 +167,16 @@ class SearchMovie : FragmentActivity() {
         GetSearchMovies(newText)
         editText.setText(newText)
     }
+    fun accessDenied () {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
 
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
+    }
 
 }

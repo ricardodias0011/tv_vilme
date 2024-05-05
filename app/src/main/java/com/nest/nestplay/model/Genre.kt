@@ -1,10 +1,11 @@
 package com.nest.nestplay.model
 
 class Genre(val id: Int, val name: String)
+
 class Genres {
     companion object {
         val genres = listOf(
-            Genre(0, "Todos"),
+            Genre(0, "Explorar"),
             Genre(28, "Ação"),
             Genre(12, "Aventura"),
             Genre(16, "Animação"),
@@ -31,7 +32,8 @@ class Genres {
             Genre(10766, "Novela"),
             Genre(10767, "Tak show"),
             Genre(10768, "Guerra e Política"),
-            Genre(37, "Faroeste")
+            Genre(37, "Faroeste"),
+            Genre(5, "Anime")
         )
     }
 }

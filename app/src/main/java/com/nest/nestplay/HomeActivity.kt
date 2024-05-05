@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.view.KeyEvent
 import android.view.View
 import android.view.animation.Animation
@@ -31,15 +32,21 @@ import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 import com.nest.nestplay.utils.Constants
 import java.util.Date
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.OnItemFocusChangeListener {
     private lateinit var binding: ActivityHomeBinding
     val MoviesListFragment = ListFragment()
+    val TvLiveListFragment = ListLiveTvFragment()
+
     var selectedMenu = Constants.MENU_HOME
     lateinit var navBar: BrowseFrameLayout
 
     lateinit var btnSearch: TextView
     lateinit var btnHome: TextView
+    lateinit var btnTvLive: TextView
     lateinit var btnMovie: TextView
     lateinit var btnSeries: TextView
     lateinit var btnGenres: TextView
@@ -65,11 +72,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
         navBar = findViewById(R.id.blfNavBar)
 
-        MoviesListFragment.setOnItemClickListener {movie ->
-            val intent = Intent(this, DetailMovieActivity::class.java)
-            intent.putExtra("id", movie.id)
-            startActivity(intent)
-        }
 
         MoviesListFragment.setOnContentSelectedListener { movie ->
             if(movie != null){
@@ -78,14 +80,19 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         }
 
         MoviesListFragment.setOnItemClickListener {movie ->
-            val intent = Intent(this, DetailMovieActivity::class.java)
-            intent.putExtra("id", movie.id)
-            startActivity(intent)
+            if(movie.isNoPartContent != null){
+                val intent = Intent(this, GenreActivity::class.java)
+                intent.putExtra("id", movie.isNoPartContent)
+                startActivity(intent)
+            }else{
+                val intent = Intent(this, DetailMovieActivity::class.java)
+                intent.putExtra("id", movie.id)
+                startActivity(intent)
+            }
         }
 
         ChangeTextCatogy("Home")
-        GetRecentsWatchList()
-
+        onGetCategorys("Home", true)
         val onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
             if (hasFocus) {
                 if (!SIDE_MENU) {
@@ -104,7 +111,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnSearch = binding.btnSearch
         btnSeries =  binding.btnSeries
         btnGenres =  binding.btnGenres
-
+        btnTvLive = binding.btnTv
 
         btnHome.setOnKeyListener(this)
         btnHome.setOnClickListener {
@@ -138,6 +145,8 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             ChangeTextCatogy("Séries")
             onGetCategorys("Serie", false)
         }
+
+
         btnSeries.onFocusChangeListener = onFocusChangeListener
 
         btnGenres.setOnKeyListener(this)
@@ -158,7 +167,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         if(isHome == true){
             GetRecentsWatchList()
         }else{
-            GetPopularityMovies(key)
+            GetPopularityMovies(key, true)
         }
         lastSelectedCategory = key
     }
@@ -265,28 +274,21 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     val movieListDate = mutableListOf<Timestamp>()
                     for (document in documents){
                         if(document != null){
-                            val movie = document.toObject(TimeModel::class.java)
-                            movieList.add(movie.content_id)
-                            movieListDate.add(movie.updatedAt)
+                            val time = document.toObject(TimeModel::class.java)
+                            time?.content_id?.let { movieList.add(it) }
+                            time?.updatedAt?.let { movieListDate.add(it) }
                         }
                     }
                     if(movieList.isEmpty()){
-                        GetPopularityMovies("Movie")
+                        GetPopularityMovies("Movie", true)
                     }else{
                         GetRecentsWatchMovies(movieList, movieListDate)
                     }
                 }
                 .addOnFailureListener { it
-                    println(it.message)
                     if(it.message == Common.msgPermissionDENIED){
-                        println("Acesso negado")
-                        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                        val gson = Gson()
-                        val userJson = sharedPreferences.getString("user", null)
-                        val user = gson.fromJson(userJson, UserModel::class.java)
-                        println(user?.name)
+                        accessDenied()
                     }
-                    println(it.cause)
                 }
         }
     }
@@ -298,6 +300,11 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             .addOnSuccessListener { documents ->
                 val movieDatePairs = mutableListOf<ListMovieModel.Movie>()
                 documents.forEachIndexed { index, document ->
+                    val firstDocument = documents.firstOrNull()
+                    if (firstDocument != null) {
+                        val firstMovie = firstDocument.toObject(ListMovieModel.Movie::class.java)
+                        updateMainMovie(firstMovie)
+                    }
                     if(document != null){
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
                         movie.poster_path = URLPATHIMAGE + movie.poster_path
@@ -313,15 +320,23 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 UpdateListItem(movieDatePairs, "Continue assistindo")
-                GetPopularityMovies("")
+
+                GetPopularityMovies("", movieDatePairs.isEmpty())
+            }
+            .addOnFailureListener { it
+                if(it.message == Common.msgPermissionDENIED){
+                    accessDenied()
+                }
             }
     }
 
-    private fun GetPopularityMovies(type: String?) {
+    private fun GetPopularityMovies(type: String?, updateFirstBanner: Boolean?) {
         loadingDialog.show()
+        val idCategory = 101
         var query = fetchMoviesAndUpdateList()
             .orderBy("popularity", Query.Direction.DESCENDING)
-            .limit(10)
+            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L))
+            .limit(15)
         if (type == "Serie") {
             query = query.whereEqualTo("contentType", "Serie")
         }
@@ -332,7 +347,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
                 val firstDocument = documents.firstOrNull()
-                if (firstDocument != null) {
+                if (firstDocument != null && updateFirstBanner == true) {
                     val firstMovie = firstDocument.toObject(ListMovieModel.Movie::class.java)
                     updateMainMovie(firstMovie)
                 }
@@ -346,22 +361,31 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 if(!movieList.isEmpty()){
                     val titleList = if (type == "Serie") "Séries populares" else "Populares"
+                    movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, titleList)
 
                 }
                 loadingDialog.dismiss()
                 GetMainMovies()
             }
+            .addOnFailureListener { it
+                if(it.message == Common.msgPermissionDENIED){
+                    accessDenied()
+                }
+            }
     }
 
 
 
     private fun GetMainMovies() {
+        val idCategory = 28
+
         var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
         query
+            .whereArrayContains("genre_ids", idCategory)
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
@@ -373,22 +397,22 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, "Luz, Câmera, Ação")
                 }
                 GetComedyMovies()
             }
     }
 
-
-
-
     private fun GetComedyMovies() {
-        var query=  fetchMoviesAndUpdateList() .limit(12)
+        val idCategory = 35
+
+        var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
         query
-            .whereArrayContains("genre_ids", 35)
+            .whereArrayContains("genre_ids", idCategory)
             .limit(10)
             .get()
             .addOnSuccessListener { documents ->
@@ -401,19 +425,107 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, "Comédia")
+                }
+                GetNovela()
+            }
+    }
+
+
+    private fun GetNovela() {
+        val idCategory = 10766
+
+        if(lastSelectedCategory != "Home"){
+            getCrimes()
+            return
+        }
+
+        var query=  fetchMoviesAndUpdateList() .limit(20)
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents){
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList, "Novelas")
+                }
+                getCrimes()
+            }
+    }
+
+
+
+    private fun getCrimes() {
+        val idCategory = 80
+
+        var query=  fetchMoviesAndUpdateList() .limit(20)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents){
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList, "Mentes Criminosas")
+                }
+                getVotes()
+            }
+    }
+
+    private fun getVotes() {
+        val idCategory = 100
+        var query=  fetchMoviesAndUpdateList() .limit(20)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereGreaterThan("vote_average", 7)
+            .orderBy("vote_count", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents){
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList, "Recomendados pela Crítica")
                 }
                 GetHorrorMovies()
             }
     }
 
     private fun GetHorrorMovies() {
-        var query=  fetchMoviesAndUpdateList() .limit(12)
+        val idCategory = 27
+        var query=  fetchMoviesAndUpdateList() .limit(15)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
         query
-            .whereArrayContains("genre_ids", 27)
+            .whereArrayContains("genre_ids", idCategory)
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
@@ -425,43 +537,22 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, "Noites de terror")
                 }
-                GetAnimations()
+                GetAnimes()
             }
     }
 
-    private fun GetAnimations() {
-            var query=  fetchMoviesAndUpdateList() .limit(12)
-            if(lastSelectedCategory != "Home"){
-                query = query.whereEqualTo("contentType", lastSelectedCategory)
-            }
-            query
-            .whereArrayContains("genre_ids", 16)
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents){
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    UpdateListItem(movieList, "Animação")
-                }
-                GetForFamily()
-            }
-    }
 
-    private fun GetForFamily() {
-            var query=  fetchMoviesAndUpdateList() .limit(12)
-            if(lastSelectedCategory != "Home"){
-                query = query.whereEqualTo("contentType", lastSelectedCategory)
-            }
-            query
-            .whereArrayContains("genre_ids", 10751)
+    private fun GetAnimes() {
+        val idCategory = 5
+        var query=  fetchMoviesAndUpdateList().limit(20)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
             .limit(10)
             .get()
             .addOnSuccessListener { documents ->
@@ -474,39 +565,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
-                    UpdateListItem(movieList,"Para toda familia")
-                }
-                GetNacionalMovies()
-            }
-    }
-
-    private fun GetNacionalMovies() {
-            var query=  fetchMoviesAndUpdateList().limit(12)
-            if(lastSelectedCategory != "Home"){
-                query = query.whereEqualTo("contentType", lastSelectedCategory)
-            }
-            query
-            .whereEqualTo("original_language", "pt")
-            .get()
-            .addOnSuccessListener { documents ->
-                val movieList = mutableListOf<ListMovieModel.Movie>()
-                for (document in documents) {
-                    if(document != null){
-                        val movie = document.toObject(ListMovieModel.Movie::class.java)
-                        movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        movieList.add(movie)
-                    }
-                }
-                if(!movieList.isEmpty()){
-                    UpdateListItem(movieList,"Nacionais")
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Animes")
                 }
                 GetNetflixMovies()
-            }
-            .addOnFailureListener {
             }
     }
 
     private fun GetNetflixMovies() {
+        val idCategory = 7
         var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
@@ -524,21 +591,77 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
-                    UpdateListItem(movieList,"Netflix")
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList, "NETFLIX")
                 }
-                GetScienceFictionMovies()
+                getKids()
             }
             .addOnFailureListener {
             }
     }
 
-    private fun GetScienceFictionMovies() {
+    private fun getKids() {
+        val idCategory = 10762
+        var query=  fetchMoviesAndUpdateList() .limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents){
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList, "Animação")
+                }
+                GetForFamily()
+            }
+    }
+
+
+    private fun GetForFamily() {
+        val idCategory = 10751
+        var query=  fetchMoviesAndUpdateList() .limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .limit(10)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents){
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Para toda familia")
+                }
+                GetNacionalMovies()
+            }
+    }
+
+    private fun GetNacionalMovies() {
         var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
         query
-            .whereArrayContains("genre_ids", 878)
+            .whereEqualTo("original_language", "pt")
+            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L))
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
@@ -550,7 +673,151 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(0))
+                    UpdateListItem(movieList,"Nacionais")
+                }
+                GetScienceFictionMovies()
+            }
+            .addOnFailureListener {
+            }
+    }
+
+
+    private fun GetScienceFictionMovies() {
+        val idCategory = 878
+        var query=  fetchMoviesAndUpdateList().limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents) {
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList,"Ficção científica")
+                }
+                GetRomance()
+            }
+            .addOnFailureListener {
+            }
+    }
+
+    private fun GetRomance() {
+        val idCategory = 10749
+        var query=  fetchMoviesAndUpdateList().limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents) {
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+
+
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Romances")
+                }
+                GetWestern()
+            }
+            .addOnFailureListener {
+            }
+    }
+
+    private fun GetWestern() {
+        val idCategory = 37
+        var query=  fetchMoviesAndUpdateList().limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents) {
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Faroeste")
+                }
+                GetMusic()
+            }
+            .addOnFailureListener {
+            }
+    }
+
+    private fun GetMusic() {
+        val idCategory = 10402
+        var query=  fetchMoviesAndUpdateList().limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents) {
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Música")
+                }
+                GetDocs()
+            }
+            .addOnFailureListener {
+            }
+    }
+
+    private fun GetDocs() {
+        val idCategory = 99
+        var query=  fetchMoviesAndUpdateList().limit(12)
+        if(lastSelectedCategory != "Home"){
+            query = query.whereEqualTo("contentType", lastSelectedCategory)
+        }
+        query
+            .whereArrayContains("genre_ids", idCategory)
+            .get()
+            .addOnSuccessListener { documents ->
+                val movieList = mutableListOf<ListMovieModel.Movie>()
+                for (document in documents) {
+                    if(document != null){
+                        val movie = document.toObject(ListMovieModel.Movie::class.java)
+                        movie.poster_path = URLPATHIMAGE + movie.poster_path
+                        movieList.add(movie)
+                    }
+                }
+                if(!movieList.isEmpty()){
+                    movieList.add(createMoreItem(idCategory))
+                    UpdateListItem(movieList,"Documentário")
                 }
             }
             .addOnFailureListener {
@@ -563,7 +830,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
     private fun updateMainMovie(movie: ListMovieModel.Movie){
-
+        if(movie.isNoPartContent != null) {
+            return
+        }
         var date = ""
         if(movie?.contentType == "Serie" && movie.first_air_date != null){
             binding.mainTitle.setText(movie?.name)
@@ -662,5 +931,79 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             binding.fragCatogy.setText("")
             binding.fragCatogyContainer.setBackgroundResource(android.R.color.transparent)
         }, 5000)
+    }
+
+    fun accessDenied () {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
+    }
+
+    fun createMoreItem(idCategory: Int): ListMovieModel.Movie {
+       var iconMoreItem = ListMovieModel.Movie(
+           adult = false,
+           backdrop_path = "",
+           first_air_date = "",
+           genre_ids = listOf(),
+           id = 0,
+           name = "Mais",
+           origin_country = listOf(),
+           original_language = "",
+           original_name = "",
+           original_title = "",
+           overview = "",
+           popularity = 0.0,
+           poster_path = decrypt("qT4+nb5/6hsxHKX/0Qqtz6v3A+Z3QKkPX2sbYlK4DffxZWMlgX8HgEIe99NIXMMp1h8jZIxWlXIrJR9AmynJRvsxwiFoxRZaE//N6U5w2TCjg3AM2hVBUv83waGhmbgC6L626vyoI2Dt8dOYO5ai2h9X4sLbq1lGX9/JzjrsyC6KQMgEAvjvN5jGEu3PTL9X"),
+           release_date = "",
+           title = "",
+           vote_average = 0.0,
+           vote_count = 0,
+           url = "",
+           original_title_lowcase = "",
+           contentType = "",
+           subtitles = listOf(),
+           urls_subtitle = listOf(),
+           isNoPartContent = idCategory
+       )
+
+        return iconMoreItem
+    }
+
+    fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
+        var decripeted = ""
+            try {
+                val key32Char = hexStringToByteArray(password)
+                val iv32Char = hexStringToByteArray(password)
+                val secretKeySpec = SecretKeySpec(key32Char, "AES")
+                val ivParameterSpec = IvParameterSpec(iv32Char)
+                val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+                val dstBuff = cipher.doFinal(Base64.decode(msg, Base64.DEFAULT))
+                decripeted = String(dstBuff)
+            }catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        return decripeted
+    }
+
+private fun hexStringToByteArray(s: String): ByteArray {
+    val len = s.length
+    val data = ByteArray(len / 2)
+    var i = 0
+    while (i < len) {
+        data[i / 2] = ((Character.digit(s[i], 16) shl 4)
+                + Character.digit(s[i + 1], 16)).toByte()
+        i += 2
+    }
+    return data
+}
+    override fun onResume() {
+        super.onResume()
     }
 }

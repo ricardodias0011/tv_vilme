@@ -28,6 +28,9 @@ class BasicMediaPlayerAdpter(context: Context): MediaPlayerAdapter(context) {
 
     override fun next(){
         super.next()
+
+        val newPosition = mediaPlayer?.currentPosition?.plus(30000) ?: return
+        mediaPlayer?.seekTo(newPosition)
     }
 
     override fun previous(){
@@ -35,7 +38,7 @@ class BasicMediaPlayerAdpter(context: Context): MediaPlayerAdapter(context) {
     }
 
     override fun fastForward(){
-        seekTo(currentPosition + 15_000)
+        seekTo(currentPosition + 20_000)
     }
 
     fun highQuality(context: Context){
@@ -53,7 +56,7 @@ class BasicMediaPlayerAdpter(context: Context): MediaPlayerAdapter(context) {
     }
 
     override fun rewind(){
-        seekTo(currentPosition - 15_000)
+        seekTo(currentPosition - 20_000)
     }
 
     override fun getSupportedActions(): Long {

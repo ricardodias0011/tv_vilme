@@ -1,6 +1,8 @@
 package com.nest.nestplay
 
 import android.app.Dialog
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.GridLayoutManager
@@ -8,10 +10,12 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
 import com.nest.nestplay.adpters.MoviesListAdpter
 import com.nest.nestplay.databinding.ActivityMovieFavBinding
 import com.nest.nestplay.model.FavsMovie
 import com.nest.nestplay.model.ListMovieModel
+import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 
 class MovieFavActivity : FragmentActivity() {
@@ -82,7 +86,12 @@ class MovieFavActivity : FragmentActivity() {
                         loadingDialog.dismiss()
                     }
             }
-
+            .addOnFailureListener { it
+                if(it.message == Common.msgPermissionDENIED){
+                    println("msgPermissionDENIED")
+                    accessDenied()
+                }
+            }
     }
     override fun onResume() {
         super.onResume()
@@ -92,5 +101,17 @@ class MovieFavActivity : FragmentActivity() {
         val db = Firebase.firestore
         val docRef = db.collection("catalog")
         return docRef
+    }
+
+    fun accessDenied () {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
     }
 }

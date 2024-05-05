@@ -2,12 +2,18 @@ package com.nest.nestplay.utils
 
 import android.app.Dialog
 import android.content.Context
+import android.net.wifi.WifiManager
+import android.util.Base64
 import android.view.Window
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import com.nest.nestplay.R
 import com.nest.nestplay.model.UserModel
+import java.net.InetAddress
+import javax.crypto.Cipher
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class Common {
     companion object {
@@ -22,6 +28,53 @@ class Common {
         fun getHeightInPercent(context: Context, percent: Int): Int {
             val height = context.resources.displayMetrics.heightPixels ?: 0
             return (height * percent) / 100
+        }
+
+        private fun hexStringToByteArray(s: String): ByteArray {
+            val len = s.length
+            val data = ByteArray(len / 2)
+            var i = 0
+            while (i < len) {
+                data[i / 2] = ((Character.digit(s[i], 16) shl 4)
+                        + Character.digit(s[i + 1], 16)).toByte()
+                i += 2
+            }
+            return data
+        }
+        fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
+            var urlDecodeString = ""
+                try {
+                    val key32Char = hexStringToByteArray(password)
+                    val iv32Char = hexStringToByteArray(password)
+                    val secretKeySpec = SecretKeySpec(key32Char, "AES")
+                    val ivParameterSpec = IvParameterSpec(iv32Char)
+                    val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec)
+                    val dstBuff = cipher.doFinal(Base64.decode(msg, Base64.DEFAULT))
+                    urlDecodeString = String(dstBuff)
+                }catch (ex: Exception) {
+                    ex.printStackTrace()
+                }
+            return urlDecodeString
+        }
+
+        fun getIpAddress(context: Context): String? {
+            try {
+                val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val wifiInfo = wifiManager.connectionInfo
+                val ipAddress = wifiInfo.ipAddress
+                return InetAddress.getByAddress(
+                    byteArrayOf(
+                        (ipAddress and 0xFF).toByte(),
+                        (ipAddress shr 8 and 0xFF).toByte(),
+                        (ipAddress shr 16 and 0xFF).toByte(),
+                        (ipAddress shr 24 and 0xFF).toByte()
+                    )
+                ).hostAddress
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return null
         }
 
         fun playmentRequiredDialog(context: Context, user: UserModel) {

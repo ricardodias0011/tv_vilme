@@ -10,6 +10,7 @@ object Constants {
     const val MENU_FAVS = "favs"
     const val MENU_MOVIE = "movie"
     const val MENU_SETTINGS = "settings"
+    const val MENI_ANIME = "animes"
     val KEY_D = "770E75DC61635CCC61A1D7D8FFF9D1B0"
 
 }

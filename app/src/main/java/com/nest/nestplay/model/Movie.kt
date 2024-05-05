@@ -24,7 +24,7 @@ data class MovieModel(
     val vote_count: Int = 0,
     var url: String = "",
     val original_title_lowcase: String? = "",
-    val contentType: String? = "",
+    var contentType: String? = "",
     var current_ep: Int? = 0,
     var season: Int? = 0,
     var total_seasons: Int? = 0,
@@ -32,4 +32,6 @@ data class MovieModel(
     var urls_subtitle: List<String>? = listOf(),
     var beginningStart: Boolean? = false,
     var idEpsode: String? = "",
+    var listEpsodes:  MutableList<ListEpisodesModel>? = null,
+    var currentSeason: Int? = null
     ): Parcelable

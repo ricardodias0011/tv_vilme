@@ -1,6 +1,7 @@
 package com.nest.nestplay
 
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
@@ -19,20 +20,26 @@ import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
 import com.nest.nestplay.databinding.ActivityDetailMovieBinding
 import com.nest.nestplay.fragments.ListEpisodesFragment
 import com.nest.nestplay.model.Genres
 import com.nest.nestplay.model.ListEpisodesModel
 import com.nest.nestplay.model.MovieModel
+import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
+import java.util.Date
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.math.ceil
 
 class DetailMovieActivity: FragmentActivity() {
 
     lateinit var binding: ActivityDetailMovieBinding
     lateinit var loadingDialog: Dialog
+
+    var loadInfosContentFavsMovies = true
 
     val SimilarFragment = ListFragment()
     val EpisodesListFragment = ListEpisodesFragment()
@@ -41,11 +48,24 @@ class DetailMovieActivity: FragmentActivity() {
     var firstEpisode: ListEpisodesModel? = null
 
     var wasEncrypted: Boolean = false
+//    btn_tv
+    var movieId: Int = 0
 
+    val episodesList = mutableListOf<ListEpisodesModel>()
+
+    var epsodesIsLoader = false
+    var similarListIsLoader = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_detail_movie)
         setContentView(binding.root)
+        movieId = intent.getIntExtra("id", 0)
+
+        val user = getCurrentUser()
+        var today = Date()
+        if(user?.expirePlanDate?.toDate()?.before(today) == true){
+            navigateFromAccessDenied(user)
+        }
 
         addFragment(SimilarFragment)
         addFragmentEpisodeos(EpisodesListFragment)
@@ -62,8 +82,9 @@ class DetailMovieActivity: FragmentActivity() {
             detailsResponse?.urls_subtitle = epsode?.urls_subtitle
             detailsResponse?.subtitles = epsode?.subtitles
             detailsResponse?.idEpsode = epsode?.idEpsode
+            detailsResponse?.listEpsodes = episodesList
             if(detailsResponse?.url == null || detailsResponse?.url?.length!! < 2){
-                Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG)
+                Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG).show()
             }else{
                 intent.putExtra("movie", detailsResponse)
                 startActivity(intent)
@@ -76,15 +97,13 @@ class DetailMovieActivity: FragmentActivity() {
             startActivity(intent)
         }
 
-        val movieId = intent.getIntExtra("id", 0)
 
-        GetMovie(movieId)
         GeteCurrentTime(movieId)
         ContentInFavs(movieId)
         binding.playBeginning.visibility = View.VISIBLE
         binding.moreEpisodesSerie.visibility = View.GONE
         binding.spinnerSelectTemp.visibility = View.GONE
-        binding.episodesText.visibility = View.GONE
+        binding.spinnerSelectEpNumber.visibility = View.GONE
         binding.showMore.setOnClickListener {
 
             val subTitle = binding.subtitleDetail.text.toString()
@@ -117,9 +136,11 @@ class DetailMovieActivity: FragmentActivity() {
             detailsResponse?.url = decrypt(lastEpisode!!.url)
             detailsResponse?.current_ep = lastEpisode!!.ep_number
             detailsResponse?.idEpsode = lastEpisode!!.idEpsode
+            detailsResponse?.listEpsodes = episodesList
+            detailsResponse?.season = lastEpisode?.season
         }else {
             if(detailsResponse?.url != null){
-                detailsResponse?.url = decrypt(detailsResponse!!.url)
+                detailsResponse?.url =  decrypt(lastEpisode!!.url)
             }
         }
         if(beginning === true){
@@ -128,11 +149,12 @@ class DetailMovieActivity: FragmentActivity() {
                 detailsResponse?.url = decrypt(firstEpisode!!.url)
                 detailsResponse?.current_ep = firstEpisode!!.ep_number
                 detailsResponse?.idEpsode = firstEpisode!!.idEpsode
+                detailsResponse?.season = firstEpisode?.season
             }
             detailsResponse?.beginningStart  = true
         }
         if(detailsResponse?.url == null || detailsResponse?.url?.length!! < 2){
-            Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG)
+            Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG).show()
         }else{
             val intent = Intent(this, VideoPlayActivity::class.java)
             intent.putExtra("movie", detailsResponse)
@@ -193,10 +215,13 @@ class DetailMovieActivity: FragmentActivity() {
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
                         if(movie.contentType == "Serie"){
-                            GetSeassons(movie)
+                            if(!epsodesIsLoader){
+                                GetSeassons(movie)
+                                epsodesIsLoader = true
+                            }
                             binding.moreLikeThis.nextFocusForwardId = binding.similarMoviesDetaillist.id
                             binding.moreEpisodesSerie.visibility = View.VISIBLE
-                            binding.episodesText.visibility = View.VISIBLE
+                            binding.spinnerSelectEpNumber.visibility = View.VISIBLE
                             binding.spinnerSelectTemp.visibility = View.VISIBLE
                         }
                         movie.poster_path = "https://image.tmdb.org/t/p/w1280" + movie.backdrop_path
@@ -220,14 +245,20 @@ class DetailMovieActivity: FragmentActivity() {
                         Glide.with(this)
                             .load(movie.poster_path)
                             .into(binding.imgBannerDetail)
-
-                        GetSimilar(movie.genre_ids.get(0),id_movie)
+                        if(!similarListIsLoader){
+                            GetSimilar(movie.genre_ids.get(0),id_movie)
+                            similarListIsLoader = true
+                        }
 
 
                     }
                 }
             }
-
+            .addOnFailureListener { it
+                if(it.message == Common.msgPermissionDENIED){
+                    accessDenied()
+                }
+            }
     }
 
 
@@ -264,7 +295,6 @@ class DetailMovieActivity: FragmentActivity() {
             .orderBy("ep_number", Query.Direction.ASCENDING)
             .get()
             .addOnSuccessListener {documents ->
-                val episodesList = mutableListOf<ListEpisodesModel>()
                 val firstDocument = documents.firstOrNull()
                 val getfirstMovie = firstDocument?.toObject(ListEpisodesModel::class.java)
                 if (getfirstMovie != null) {
@@ -278,6 +308,8 @@ class DetailMovieActivity: FragmentActivity() {
                         episodesList.add(epsode)
                     }
                 }
+
+                getEpsodesListForCount(documents.count())
                 val episodioMaisRecente = episodesList.maxByOrNull { it.last_seen?.seconds ?: 0 }
                 if(episodioMaisRecente != null){
                     lastEpisode = episodioMaisRecente
@@ -286,24 +318,64 @@ class DetailMovieActivity: FragmentActivity() {
                         lastEpisode = getfirstMovie
                     }
                 }
-                if(episodesList?.isEmpty()!!){
-                    binding.moreEpisodesSerie.visibility = View.GONE
-                    binding.episodesText.visibility = View.GONE
-                }
-                if (EpisodesListFragment != null) {
-                    binding.moreEpisodesSerie.visibility = View.VISIBLE
-                    binding.episodesText.visibility = View.VISIBLE
-                    EpisodesListFragment.bindData(episodesList,"Episódios")
-                } else {
-                }
             }
             .addOnFailureListener {
                 binding.moreEpisodesSerie.visibility = View.GONE
                 binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
+                        if(it.message == Common.msgPermissionDENIED){
+                            accessDenied()
+                    }
             }
     }
 
+    private fun getEpsodesListForCount(totalepInSeason: Int,) {
+
+        val listEpNumbers = mutableListOf<String>()
+
+        if (totalepInSeason > 0) {
+            val episodesPerBlock = 20
+            val renderEpsodeNumbers = ceil(totalepInSeason.toDouble() / episodesPerBlock).toInt()
+            for (blockNumber in 1..renderEpsodeNumbers) {
+                val initialEp = (blockNumber - 1) * episodesPerBlock + 1
+                var lastEp = blockNumber * episodesPerBlock
+                if (lastEp > totalepInSeason) {
+                    lastEp = totalepInSeason
+                }
+                listEpNumbers.add("Episódios $initialEp - $lastEp")
+            }
+        }
+        val adapterSelectSpinnerEp_numbers = ArrayAdapter(this, android.R.layout.simple_spinner_item, listEpNumbers)
+        adapterSelectSpinnerEp_numbers.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
+        binding.spinnerSelectEpNumber.adapter = adapterSelectSpinnerEp_numbers
+
+        binding.spinnerSelectEpNumber.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                val selectedRange = listEpNumbers[position]
+                val rangeValues = selectedRange.substringAfter("Episódios ").split(" - ")
+                val startEp = rangeValues[0].toInt()
+                val endEp = rangeValues[1].toInt()
+
+                EpisodesListFragment.clearAll()
+                val episodesListRender = episodesList.subList(startEp - 1, endEp)
+                if (episodesListRender.isEmpty()) {
+                    binding.moreEpisodesSerie.visibility = View.GONE
+                } else {
+                    binding.moreEpisodesSerie.visibility = View.VISIBLE
+                    EpisodesListFragment.bindData(episodesListRender,"Episódios")
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+
+        }
+    }
+
     private fun GetSimilar(genre:Int, id_movie: Int){
+        if( loadInfosContentFavsMovies == false){
+            return
+        }
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
         var query = docRef.whereArrayContains("genre_ids", genre)
@@ -324,8 +396,14 @@ class DetailMovieActivity: FragmentActivity() {
                 if (SimilarFragment != null) {
                     SimilarFragment.bindMovieData(movieList,"Você também pode gostar")
                     addHeightViewListMovie()
+                    loadInfosContentFavsMovies = false
                 } else {
                     Log.e("GetSimilar", "SimilarFragment is null")
+                }
+            }
+            .addOnFailureListener {
+                if(it.message == Common.msgPermissionDENIED){
+                    accessDenied()
                 }
             }
     }
@@ -439,6 +517,38 @@ class DetailMovieActivity: FragmentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         wasEncrypted = false
+        loadInfosContentFavsMovies = true
         loadingDialog.hide()
+    }
+
+    fun getCurrentUser(): UserModel? {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        return user
+    }
+
+    fun navigateFromAccessDenied(user: UserModel) {
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
+    }
+
+    fun accessDenied () {
+        val user = getCurrentUser()
+        if(user != null){
+            navigateFromAccessDenied(user)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        wasEncrypted = false
+        ContentInFavs(movieId)
+        GeteCurrentTime(movieId)
+        GetMovie(movieId)
     }
 }

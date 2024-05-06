@@ -26,6 +26,7 @@ import com.nest.nestplay.fragments.ListEpisodesFragment
 import com.nest.nestplay.model.Genres
 import com.nest.nestplay.model.ListEpisodesModel
 import com.nest.nestplay.model.MovieModel
+import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 import java.util.Date
@@ -140,7 +141,7 @@ class DetailMovieActivity: FragmentActivity() {
             detailsResponse?.season = lastEpisode?.season
         }else {
             if(detailsResponse?.url != null){
-                detailsResponse?.url =  decrypt(lastEpisode!!.url)
+                detailsResponse?.url =  decrypt(detailsResponse!!.url)
             }
         }
         if(beginning === true){
@@ -286,6 +287,7 @@ class DetailMovieActivity: FragmentActivity() {
     }
 
     private fun GetEpsodeos(id_movie: Int, seasseon: Number?){
+        episodesList.clear()
         EpisodesListFragment.clearAll()
         val db =  Firebase.firestore
         val docRef = db.collection("epsodes_series")
@@ -363,6 +365,12 @@ class DetailMovieActivity: FragmentActivity() {
                 } else {
                     binding.moreEpisodesSerie.visibility = View.VISIBLE
                     EpisodesListFragment.bindData(episodesListRender,"Episódios")
+
+                    if(lastEpisode != null){
+                        println("Aki tem ${episodesListRender.size}")
+                        println("Chamou set item lastEpisode")
+                        EpisodesListFragment.findItemRowAdapter(lastEpisode!!)
+                    }
                 }
             }
 
@@ -421,7 +429,8 @@ class DetailMovieActivity: FragmentActivity() {
                     val firstDocument = documents.firstOrNull()
                     if(firstDocument != null){
                         binding.playBeginning.visibility = View.VISIBLE
-                        binding.play.setText("Continuar assistindo")
+                        val time = firstDocument.toObject(TimeModel::class.java)
+                        binding.play.text = time?.episode?.takeIf { it != 0 }?.let { "Continuar assistindo EP: $it" } ?: "Continuar assistindo"
                     }else{
                         binding.playBeginning.visibility = View.GONE
                         binding.play.setText("Assistir")

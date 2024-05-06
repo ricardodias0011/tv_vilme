@@ -20,6 +20,9 @@ import com.nest.nestplay.model.Genres
 import com.nest.nestplay.model.ListMovieModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class GenreActivity : FragmentActivity() {
     private lateinit var binding: ActivityGenreBinding
@@ -112,9 +115,18 @@ class GenreActivity : FragmentActivity() {
             customId = true
             query = query.orderBy("popularity", Query.Direction.DESCENDING)
         }
+        if (gere == 3) {
+            customId = true
+            val formataData = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val currentDate = Date()
+            val todayString = formataData.format(currentDate)
+            query =  query.whereLessThan("release_date", todayString)
+                .orderBy("release_date", Query.Direction.DESCENDING)
+        }
         if (gere != 0 && !customId) {
             query = query.whereArrayContains("genre_ids", gere)
         }
+
         if (lastVisible != null && clear == false) {
             if(gere != 101){
                 query = query.orderBy("popularity")

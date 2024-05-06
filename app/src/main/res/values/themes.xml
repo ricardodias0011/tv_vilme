@@ -1,5 +1,7 @@
 <resources>
     <style name="Theme.NestPlay" parent="@style/Theme.Leanback">
         <item name="android:windowFullscreen">true</item>
+        <item name="colorControlNormal">@color/color_red</item>
+        <item name="colorAccent">@color/color_red</item>
     </style>
 </resources>

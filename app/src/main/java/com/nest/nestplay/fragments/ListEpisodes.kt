@@ -21,6 +21,8 @@ class ListEpisodesFragment : RowsSupportFragment() {
     private var itemSelectedListener: ((ListEpisodesModel) -> Unit)? = null
     private var itemClickListener: ((ListEpisodesModel) -> Unit)? = null
 
+    private var itemSelectListener: ((ListEpisodesModel) -> Unit)? = null
+
     private val itemPositionMap: MutableMap<Any, Int> = mutableMapOf()
 
     private val listRowPresenter = object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM) {
@@ -56,10 +58,31 @@ class ListEpisodesFragment : RowsSupportFragment() {
         onItemViewClickedListener = ItemViewClickListener()
 
     }
+    private val gridPresenter = EpisodeosPresenter()
 
-    fun setOnItemDetailClickListener(listener: (ListEpisodesModel) -> Unit) {
-        this.itemClickListener = listener
+    fun findItemRowAdapter(episode: ListEpisodesModel): Row? {
+        for (i in 0 until rootAdapter.size()) {
+            val row = rootAdapter[i] as? ListRow
+            row?.let {
+                val adapter = row.adapter
+                for (j in 0 until adapter.size()) {
+                    val item = adapter.get(j) as? ListEpisodesModel
+                    if (item != null && item == episode) {
+                        val viewHolder = (gridPresenter as? EpisodeosPresenter)?.getViewHolder(item, requireContext())
+                        viewHolder?.let { holder ->
+                            val itemView = holder.view
+                            itemView.setBackgroundResource(R.drawable.btn_selector_keybord)
+                            println("Assim porra do caralho ${itemView.background}")
+                            itemView.invalidate()
+                        }
+                        return row
+                    }
+                }
+            }
+        }
+        return null
     }
+
 
 
     fun bindData(list: List<ListEpisodesModel>, title: String) {
@@ -96,7 +119,6 @@ class ListEpisodesFragment : RowsSupportFragment() {
 
         }
     }
-
 
     inner class ItemViewClickListener : OnItemViewClickedListener {
         override fun onItemClicked(

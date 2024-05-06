@@ -43,6 +43,8 @@ class CustomTransportControlGlue(
     }
 
 
+
+
     fun startVideoAtTime(timeMillis: Long) {
             println("PULAR PARA ${timeMillis}")
         try{
@@ -63,7 +65,14 @@ class CustomTransportControlGlue(
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
         super.onCreatePrimaryActions(primaryActionsAdapter)
 //        primaryActionsAdapter.add(subtitlesAction)
-        primaryActionsAdapter.add(qualityChangerAction)
+//        primaryActionsAdapter.add(qualityChangerAction)
+    }
+
+    override fun onCreateSecondaryActions(secondaryActionsAdapter: ArrayObjectAdapter?) {
+        super.onCreateSecondaryActions(secondaryActionsAdapter)
+        if (secondaryActionsAdapter != null) {
+//            secondaryActionsAdapter.add(qualityChangerAction)
+        }
     }
 
     override fun onActionClicked(action: Action?) {
@@ -77,7 +86,20 @@ class CustomTransportControlGlue(
         onUpdateProgress()
     }
 
+    override fun onPlayStateChanged() {
+        super.onPlayStateChanged()
+        if(playerAdapter.isPlaying){
+            host.hideControlsOverlay(true)
+        }
+    }
 
+    fun hideControlsOverlay(immediate: Boolean) {
+        if (immediate) {
+            host.hideControlsOverlay(true)
+        } else {
+            host.hideControlsOverlay(false)
+        }
+    }
 
     override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
         if (event != null) {
@@ -137,6 +159,7 @@ class CustomTransportControlGlue(
 
             })
         playWhenPrepared()
+
     }
 
 }

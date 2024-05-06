@@ -1,5 +1,6 @@
 package com.nest.nestplay.presenter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
@@ -7,6 +8,7 @@ import androidx.leanback.widget.Presenter
 import com.nest.nestplay.R
 import com.nest.nestplay.model.ListEpisodesModel
 class EpisodeosPresenter : Presenter() {
+
     override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
 
         val view =
@@ -24,7 +26,13 @@ class EpisodeosPresenter : Presenter() {
 
     }
 
+    fun getViewHolder(item: ListEpisodesModel, context: Context): ViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.epsodeos_item, null, false)
+        val viewHolder = ViewHolder(view)
+        onBindViewHolder(viewHolder, item)
 
+        return viewHolder
+    }
     override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
         val content = item as ListEpisodesModel
 

@@ -42,7 +42,9 @@ import com.nest.nestplay.utils.Constants
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -96,34 +98,46 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     if (lastSelectedCategory == "Home") {
                         fatchDataContent(10766, "Novelas")
                     }
+
                     fatchDataContent(80, "Mentes Criminosas")
-                    fatchDataContent(27, "Noites de terror")
+
+                    val formataData = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val currentDate = Date()
+                    val todayString = formataData.format(currentDate)
+                    var query = fetchMoviesAndUpdateList().limit(12)
+                        .whereLessThan("release_date", todayString)
+                        .orderBy("release_date", Query.Direction.DESCENDING)
+                    fatchDataContentWidthQuery(query, "Lançados recentemente", 3)
                 }
                 if (title == "Mentes Criminosas" && !SecondGrouploaded) {
                     SecondGrouploaded = true
-                    println("Mentes Criminosasss")
+                    fatchDataContent(27, "Noites de terror")
                     fatchDataContent(5, "Animes")
                     fatchDataContent(16, "Animação")
-                    fatchDataContent(10751, "Para toda familia")
                 }
                 if(title == "Animação" && !ThirdGrouploaded){
                     ThirdGrouploaded = true
+                    var queryRecomentCritic = fetchMoviesAndUpdateList().limit(12)
+                        .whereGreaterThan("vote_average", 8)
+                        .orderBy("vote_count", Query.Direction.DESCENDING)
+                    fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8)
                     var query = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("distributed", "Netflix")
                     fatchDataContentWidthQuery(query, "Netflix", 7)
                     var query2 = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("distributed", "Marvel")
                     fatchDataContentWidthQuery(query2, "Heróis da Marvel", 8)
-                    fatchDataContent(10764, "Realitys")
                 }
                 if (title == "Netflix" && !FourGrouploaded) {
                     FourGrouploaded = true
+                    fatchDataContent(10751, "Para toda familia")
                     fatchDataContent(878, "Ficção científica")
                     fatchDataContent(10749, "Romances")
                     fatchDataContent(37, "Faroeste")
                 }
                 if (title == "Romances" && !FiveGrouploaded) {
                     FiveGrouploaded = true
+                    fatchDataContent(10764, "Realitys")
                     fatchDataContent(10402, "Música")
                     fatchDataContent(99, "Documentário")
                     fatchDataContent(10767, "Talk shows")
@@ -470,7 +484,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             docRef
                 .whereEqualTo("user_id", user.uid)
                 .orderBy("updatedAt", Query.Direction.DESCENDING)
-                .limit(12)
+                .limit(20)
                 .get()
                 .addOnSuccessListener { documents ->
                     val movieList = mutableListOf<Int>()
@@ -497,9 +511,10 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     }
     private fun GetRecentsWatchMovies(list: List<Int>, dates: List<Timestamp>) {
         clearList()
+        loadingDialog.show()
         var query = fetchMoviesAndUpdateList()
             .whereIn("id", list)
-            .limit(22)
+            .limit(20)
         query.get()
             .addOnSuccessListener { documents ->
                 val movieDatePairs = mutableListOf<ListMovieModel.Movie>()
@@ -542,8 +557,8 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         val idCategory = 101
         var query = fetchMoviesAndUpdateList()
             .orderBy("popularity", Query.Direction.DESCENDING)
-            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L))
-            .limit(15)
+            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L, 9648L))
+            .limit(18)
         if (type == "Serie") {
             query = query.whereEqualTo("contentType", "Serie")
         }
@@ -574,6 +589,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 loadingDialog.dismiss()
 //                GetMainMovies()
+                if(lastSelectedCategory == "Home"){
+                    fatchDataContent(200, "Filmes e Séries em Destaque")
+                }
                 fatchDataContent(28, "Luz, Câmera, Ação")
                 fatchDataContent(35, "Comédia")
             }
@@ -604,7 +622,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
                 if(!movieList.isEmpty()){
-                    movieList.add(createMoreItem(idCategory))
+                    if(idCategory != 200){
+                        movieList.add(createMoreItem(idCategory))
+                    }
                     UpdateListItem(movieList, title)
                 }
             }
@@ -621,6 +641,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 val movieList = mutableListOf<ListMovieModel.Movie>()
                 for (document in documents){
                     if(document != null){
+
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
                         movie.poster_path = URLPATHIMAGE + movie.poster_path
                         movieList.add(movie)

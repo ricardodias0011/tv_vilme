@@ -15,6 +15,7 @@ class BasicMediaPlayerAdpter(context: Context): MediaPlayerAdapter(context) {
     val playlistPosition = 0
     private var onPreparedListener: (() -> Unit)? = null
     private var onErrorListener: ((error: Int, extra: Int) -> Boolean)? = null
+
     fun setOnPreparedListener(listener: () -> Unit) {
         onPreparedListener = listener
     }
@@ -41,11 +42,10 @@ class BasicMediaPlayerAdpter(context: Context): MediaPlayerAdapter(context) {
         seekTo(currentPosition + 20_000)
     }
 
+
     fun highQuality(context: Context){
         Common.changeQuality(context)
-        println(mediaPlayer)
     }
-
 
     fun subtitle(context: Context, currentMovie: MovieModel){
         var subtitles = listOf<String>()

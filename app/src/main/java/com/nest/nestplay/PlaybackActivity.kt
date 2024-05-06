@@ -21,6 +21,7 @@ import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
+import androidx.leanback.widget.PlaybackControlsRow.PlayPauseAction
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -31,6 +32,7 @@ import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.player.BasicMediaPlayerAdpter
 import com.nest.nestplay.player.CustomTransportControlGlue
+import com.nest.nestplay.player.SnapshotSeekDataProvider
 import com.nest.nestplay.presenter.EpisodeosPresenter
 import com.nest.nestplay.utils.Common
 import java.io.BufferedReader
@@ -94,8 +96,14 @@ class PlaybackFragment : VideoSupportFragment() {
         transporGlue.playerAdapter.setDataSource(Uri.parse(data?.url))
         transporGlue.loadMovieInfo(data)
 
-        transporGlue.playerAdapter.play()
+        val duration = playerAdapter.getDuration() ?: 0
+        val interval = 1000L
+        val pathPattern = "/sdcard/snapshots/frame_%d.jpg"
 
+        val seekDataProvider = SnapshotSeekDataProvider(duration, interval, pathPattern)
+
+
+        transporGlue.playerAdapter.play()
         transporGlue.playerAdapter.mediaPlayer.setOnCompletionListener {
             if (movieDate?.contentType == "Serie"){
                 var nextEpisode = data?.listEpsodes?.find { it.ep_number == data.current_ep?.plus(1) }
@@ -174,7 +182,6 @@ class PlaybackFragment : VideoSupportFragment() {
                         ResetToJumPLogn()
                         GeteCurrentTime(currentPosition, data, null)
                     }
-                    println(event)
                     when(keyCode){
                         KeyEvent.KEYCODE_DPAD_RIGHT -> {
                             val newPosition = currentPosition + 10_000
@@ -203,7 +210,6 @@ class PlaybackFragment : VideoSupportFragment() {
                     }
                 }
             }
-
             transporGlue.onKey(view, keyCode, event)
         }
     }
@@ -211,19 +217,16 @@ class PlaybackFragment : VideoSupportFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setOnItemViewSelectedListener { itemViewHolder, item, rowViewHolder, row ->
-            println(item)
             println(row)
-            println("TESTE")
             try {
                 println(item.javaClass.simpleName)
             }catch (e: Exception){
                 println(e)
             }
 
-            if(item is ListEpisodesModel){
-                CanJumpTime = false
-            }else{
-                CanJumpTime = true
+            CanJumpTime = when (item) {
+                is ListEpisodesModel, is PlayPauseAction -> false
+                else -> true
             }
         }
 
@@ -233,7 +236,7 @@ class PlaybackFragment : VideoSupportFragment() {
                 movieDate?.url = Common.decrypt(item.url)
                 movieDate?.subtitles = item?.subtitles
                 try {
-                    transporGlue.host.hideControlsOverlay(true)
+                    transporGlue.hideControlsOverlay(true)
                     transporGlue.playerAdapter.reset()
                     transporGlue.playerAdapter.setDataSource(Uri.parse(movieDate?.url))
                     transporGlue.loadMovieInfo(movieDate)
@@ -253,9 +256,11 @@ class PlaybackFragment : VideoSupportFragment() {
             movieDate?.listEpsodes?.forEach {
                 presenterSelector.add(it)
             }
+
             val row = ListRow(1L, HeaderItem("Episódios"), presenterSelector)
             (adapter as ArrayObjectAdapter).add(row)
         }
+        false
     }
 
     private inner class LoadSubtitlesTask() : AsyncTask<String, Void, List<Pair<Long, String>>>() {

@@ -14,13 +14,13 @@ class UserModel (
     val type: String = "",
     val currentScreens : List<String>? = null,
     val screensAvailables : Int = 0,
-    val activeOnlineTv: Boolean? = false
+    val activeOnlineTv: Boolean? = false,
+    val iptv_list_link: String? = "",
+    val use_default_list_tv: Boolean? = true
     ): Parcelable {
     companion object {
-        private const val DATE_FORMAT = "yyyy-MM-dd HH:mm:ss"
-
+        private const val DATE_FORMAT = "dd-MM-yyyy HH:mm:ss"
         fun timestampToString(timestamp: Timestamp?): String {
-
             val date = timestamp?.toDate()
             val dateFormat = SimpleDateFormat(DATE_FORMAT, Locale.getDefault())
             return dateFormat.format(date)

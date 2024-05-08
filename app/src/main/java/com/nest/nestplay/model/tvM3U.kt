@@ -27,28 +27,32 @@ fun parseM3uPlaylist(playlistContent: String): List<ChannelTVModel> {
     var currentChannelName = ""
     var currentStreamUrl = ""
     var currentGroupTitle = ""
-    for (line in lines) {
-        val trimmedLine = line.trim()
-        if (trimmedLine.isBlank()) {
+
+    val maxLines = minOf(lines.size, 991)
+
+    for (i in 0 until maxLines) {
+        val line = lines[i].trim()
+        if (line.isBlank()) {
             continue
         }
 
-        if (trimmedLine.startsWith("#EXTINF")) {
+        if (line.startsWith("#EXTINF")) {
             val tvgIdPattern = Regex("tvg-id=\"([^\"]+)\"")
             val tvgNamePattern = Regex("tvg-name=\"([^\"]+)\"")
             val tvgLogoUrlPattern = Regex("tvg-logo=\"([^\"]+)\"")
             val groupTitlePattern = Regex("group-title=\"([^\"]+)\"")
 
-            currentTvgId = tvgIdPattern.find(trimmedLine)?.groupValues?.get(1) ?: ""
-            currentTvgName = tvgNamePattern.find(trimmedLine)?.groupValues?.get(1) ?: ""
-            currentTvgLogoUrl = tvgLogoUrlPattern.find(trimmedLine)?.groupValues?.get(1) ?: ""
-            currentGroupTitle= groupTitlePattern.find(trimmedLine)?.groupValues?.get(1) ?: ""
-            if (lines.indexOf(trimmedLine) + 1 < lines.size) {
-                currentChannelName = lines[lines.indexOf(trimmedLine) + 1].trim()
-            }
-        } else if (trimmedLine.startsWith("http")) {
-            currentStreamUrl = trimmedLine
+            currentTvgId = tvgIdPattern.find(line)?.groupValues?.get(1) ?: ""
+            currentTvgName = tvgNamePattern.find(line)?.groupValues?.get(1) ?: ""
+            currentTvgLogoUrl = tvgLogoUrlPattern.find(line)?.groupValues?.get(1) ?: ""
+            currentGroupTitle = groupTitlePattern.find(line)?.groupValues?.get(1) ?: ""
 
+            val nextLineIndex = lines.indexOf(line) + 1
+            if (nextLineIndex < lines.size) {
+                currentChannelName = lines[nextLineIndex].trim()
+            }
+        } else if (line.startsWith("http")) {
+            currentStreamUrl = line
             val channel = ChannelTVModel(
                 currentTvgId,
                 currentTvgName,
@@ -58,6 +62,7 @@ fun parseM3uPlaylist(playlistContent: String): List<ChannelTVModel> {
                 currentGroupTitle
             )
             channels.add(channel)
+
             currentTvgId = ""
             currentTvgName = ""
             currentTvgLogoUrl = ""

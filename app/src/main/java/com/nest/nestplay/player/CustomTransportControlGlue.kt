@@ -42,11 +42,8 @@ class CustomTransportControlGlue(
         isSeekEnabled = false
     }
 
-
-
-
     fun startVideoAtTime(timeMillis: Long) {
-            println("PULAR PARA ${timeMillis}")
+        println("PULAR PARA ${timeMillis}")
         try{
             playerAdapter.seekTo(timeMillis)
             playerAdapter.play()
@@ -122,14 +119,17 @@ class CustomTransportControlGlue(
             else -> super.onKey(v, keyCode, event)
         }
     }
+
     fun loadMovieInfo(movie: MovieModel?) {
+
         if(movie != null){
             currentMovie = movie
         }
+
         if(movie?.contentType == "Serie"){
             title = movie?.name
             if (movie?.current_ep != 0 || movie?.current_ep != null){
-                title = title as String? + " EP: ${movie?.current_ep} TP: ${movie?.season}"
+                title = title as String? + " Ep: ${movie?.current_ep}"
             }
         }else{
             title = movie?.title
@@ -142,10 +142,24 @@ class CustomTransportControlGlue(
                 date_release = movie?.first_air_date
             }
             subtitle = "$genresNames - ${date_release?.slice(0..3)}"
+            if(movie?.season != null && movie?.season != 0 && movie?.contentType == "Serie"){
+                subtitle = subtitle as String + " (Temp: ${movie?.season})"
+            }
         }
+
+        var urlImageBG: String?
+
+        if(movie?.backdrop_path?.startsWith("http") == true){
+            urlImageBG = movie?.backdrop_path.toString()
+        }
+        else{
+            urlImageBG = "https://image.tmdb.org/t/p/w780" + movie?.backdrop_path
+        }
+
+        println(urlImageBG)
         Glide.with(context)
             .asBitmap()
-            .load("https://image.tmdb.org/t/p/w1280" + movie?.backdrop_path)
+            .load(urlImageBG)
             .into(object : CustomTarget<Bitmap>(){
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     controlsRow.setImageBitmap(context, resource)
@@ -158,8 +172,8 @@ class CustomTransportControlGlue(
                 }
 
             })
-        playWhenPrepared()
 
+        playWhenPrepared()
     }
 
 }

@@ -33,5 +33,6 @@ data class MovieModel(
     var beginningStart: Boolean? = false,
     var idEpsode: String? = "",
     var listEpsodes:  MutableList<ListEpisodesModel>? = null,
-    var currentSeason: Int? = null
+    var currentSeason: Int? = null,
+    var isTvLink: Boolean? = false
     ): Parcelable

@@ -144,7 +144,7 @@ class DetailMovieActivity: FragmentActivity() {
                 detailsResponse?.url =  decrypt(detailsResponse!!.url)
             }
         }
-        if(beginning === true){
+        if(beginning === true || (lastEpisode == null && detailsResponse?.contentType == "Serie")){
             if(detailsResponse?.contentType == "Serie"){
                 wasEncrypted = false
                 detailsResponse?.url = decrypt(firstEpisode!!.url)
@@ -312,14 +312,6 @@ class DetailMovieActivity: FragmentActivity() {
                 }
 
                 getEpsodesListForCount(documents.count())
-                val episodioMaisRecente = episodesList.maxByOrNull { it.last_seen?.seconds ?: 0 }
-                if(episodioMaisRecente != null){
-                    lastEpisode = episodioMaisRecente
-                }else {
-                    if (getfirstMovie != null) {
-                        lastEpisode = getfirstMovie
-                    }
-                }
             }
             .addOnFailureListener {
                 binding.moreEpisodesSerie.visibility = View.GONE
@@ -424,14 +416,33 @@ class DetailMovieActivity: FragmentActivity() {
             docRef
                 .whereEqualTo("user_id", user.uid)
                 .whereEqualTo("content_id", movieId)
+                .orderBy("updatedAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener { documents ->
                     val firstDocument = documents.firstOrNull()
                     if(firstDocument != null){
                         binding.playBeginning.visibility = View.VISIBLE
                         val time = firstDocument.toObject(TimeModel::class.java)
-                        binding.play.text = time?.episode?.takeIf { it != 0 }?.let { "Continuar assistindo EP: $it" } ?: "Continuar assistindo"
-                    }else{
+                        binding.play.text = time?.episode?.takeIf { it != 0 }?.let { "Continuar assistindo E: $it | T: ${time?.season}" } ?: "Continuar assistindo"
+                        if(time?.episode != null) {
+                            val docRef = db.collection("epsodes_series")
+                            docRef
+                                .whereEqualTo("id_content", movieId)
+                                .whereEqualTo("ep_number", time.episode)
+                                .whereEqualTo("season", time?.season)
+                                .get()
+                                .addOnSuccessListener { documents ->
+                                    val firstDocument = documents.firstOrNull()
+                                    val getLastEpsode =
+                                        firstDocument?.toObject(ListEpisodesModel::class.java)
+                                    if (getLastEpsode != null) {
+                                        println(getLastEpsode)
+                                        lastEpisode = getLastEpsode
+                                    }
+                                }
+                        }
+                    }
+                    else{
                         binding.playBeginning.visibility = View.GONE
                         binding.play.setText("Assistir")
                     }

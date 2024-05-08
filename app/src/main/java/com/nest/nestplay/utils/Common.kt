@@ -1,5 +1,6 @@
 package com.nest.nestplay.utils
 
+import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.net.wifi.WifiManager
@@ -126,6 +127,26 @@ class Common {
             dialog.setContentView(R.layout.dialog_quality)
             dialog.findViewById<TextView>(R.id.closeBtnQuality).setOnClickListener {
                 dialog.dismiss()
+            }
+            dialog.show()
+        }
+
+        fun errorModal(context: Context, title: String, msg: String?) {
+            val dialog = Dialog(context, R.style.Theme_NestPlay)
+            dialog.window?.setBackgroundDrawableResource(R.color.transparent)
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.content_erro)
+
+            dialog.findViewById<TextView>(R.id.erroTitleContent).text = title
+            dialog.findViewById<TextView>(R.id.mainTextErro).text = msg
+
+            dialog.findViewById<TextView>(R.id.closeBtnErro).setOnClickListener {
+                if (context is Activity) {
+                    (context as Activity).finish()
+                } else {
+                    dialog.dismiss()
+                }
+
             }
             dialog.show()
         }

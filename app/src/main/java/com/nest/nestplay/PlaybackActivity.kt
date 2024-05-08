@@ -32,7 +32,6 @@ import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.player.BasicMediaPlayerAdpter
 import com.nest.nestplay.player.CustomTransportControlGlue
-import com.nest.nestplay.player.SnapshotSeekDataProvider
 import com.nest.nestplay.presenter.EpisodeosPresenter
 import com.nest.nestplay.utils.Common
 import java.io.BufferedReader
@@ -95,17 +94,21 @@ class PlaybackFragment : VideoSupportFragment() {
 
         transporGlue.playerAdapter.setDataSource(Uri.parse(data?.url))
         transporGlue.loadMovieInfo(data)
-
-        val duration = playerAdapter.getDuration() ?: 0
-        val interval = 1000L
-        val pathPattern = "/sdcard/snapshots/frame_%d.jpg"
-
-        val seekDataProvider = SnapshotSeekDataProvider(duration, interval, pathPattern)
-
-
         transporGlue.playerAdapter.play()
+
+        transporGlue.playerAdapter.mediaPlayer.setOnErrorListener { mp, what, extra ->
+            if(data?.isTvLink == false){
+                Common.errorModal(
+                    requireContext(),
+                    "Erro ao reproduzir conteúdo",
+                    "Não foi possível reproduzir o conteúdo devido a um erro interno.")
+            }
+            true
+        }
+
+
         transporGlue.playerAdapter.mediaPlayer.setOnCompletionListener {
-            if (movieDate?.contentType == "Serie"){
+            if (movieDate?.contentType == "Serie" && data?.isTvLink == false){
                 var nextEpisode = data?.listEpsodes?.find { it.ep_number == data.current_ep?.plus(1) }
 
                 if (nextEpisode != null) {
@@ -130,13 +133,14 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
         runnable = object : Runnable {
-            val currentPosition = transporGlue.getCurrentPosition()
             override fun run() {
-                if(data != null){
-                    if(currentPosition > 2000){
+                val currentPosition = transporGlue.getCurrentPosition()
+                if(data != null && data?.isTvLink == false){
+                    if(currentPosition > 5000){
+                        println("Tempo loop update time: current position ${currentPosition}")
                         GeteCurrentTime(currentPosition, data, null)
                     }
-                    handler.postDelayed(this, 3 * 60 * 1000)
+                    handler.postDelayed(this, 5 * 60 * 1000)
                 }
             }
         }
@@ -145,7 +149,7 @@ class PlaybackFragment : VideoSupportFragment() {
             override fun run() {
                 val currentPosition = transporGlue.getCurrentPosition()
                 if(data != null){
-                    if (!tojump) {
+                    if (!tojump && data?.isTvLink == false) {
                         if(currentPosition > 300){
 //                            LoadSubtitlesTask().execute("x_e_1.vtt")
                             GeteCurrentTime(null, data, true)
@@ -162,7 +166,7 @@ class PlaybackFragment : VideoSupportFragment() {
         runnableScreenVerify = object : Runnable {
             override fun run() {
                 if(data != null){
-                    if(!toVerify) {
+                    if(!toVerify && data?.isTvLink == false) {
                         updateAndVerifyScreens(false)
                         handlerScreenVerif.postDelayed(this, 7 * 60 * 1000)
                     }
@@ -367,7 +371,7 @@ class PlaybackFragment : VideoSupportFragment() {
 
             if (movie?.contentType == "Serie") {
                 query = query
-                    .whereEqualTo("episode", movie?.current_ep)
+//                    .whereEqualTo("episode", movie?.current_ep)
                     .whereEqualTo("season", movie?.season)
             }
             query
@@ -377,7 +381,10 @@ class PlaybackFragment : VideoSupportFragment() {
                     if(firstDocument != null && only_get == true){
                         val firstContent = firstDocument.toObject(TimeModel::class.java)
                         val isWorkProxy = "workerproxy"
-                        if(firstContent?.current_time != null && !movie.url.contains(isWorkProxy) && movie.beginningStart === false){
+                        if(firstContent?.current_time != null &&
+                            !movie.url.contains(isWorkProxy) &&
+                            movie.beginningStart === false &&
+                            movie.current_ep == firstContent.episode){
                             transporGlue.startVideoAtTime(firstContent?.current_time)
                         }
                     }
@@ -402,28 +409,17 @@ class PlaybackFragment : VideoSupportFragment() {
         val db = Firebase.firestore
         val docRef = db.collection("content_watch")
         val now = Timestamp.now()
-
-        if(movie?.contentType == "Serie"){
-            val docRefEpsodes = db.collection("epsodes_series")
-            println("O ID DO EPSODIO É ${movie.idEpsode}")
-            if(movie?.idEpsode != null || movie.idEpsode != ""){
-                docRefEpsodes.document(movie.idEpsode!!)
-                    .update(
-                        mapOf(
-                            "last_seen" to now
-                        )
-                    )
-            }
+        val updateItem = hashMapOf(
+            "current_time" to currentTime,
+            "updatedAt" to now,
+        )
+        if (movie?.contentType == "Serie") {
+            updateItem["episode"] = movie?.current_ep
         }
 
         if(id != null){
             docRef.document(id)
-                .update(
-                    mapOf(
-                        "current_time" to currentTime,
-                        "updatedAt" to now
-                    )
-                )
+                .update(updateItem.toMap())
                 .addOnSuccessListener {
                     println("Tempo atualizado com sucesso para o documento com ID: $id")
                 }

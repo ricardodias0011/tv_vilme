@@ -65,7 +65,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     lateinit var btnGenres: TextView
     lateinit var btnFavs: TextView
     lateinit var loadingDialog: Dialog
-    var loadingMovies: Boolean = true
+    var loadingMovies: Boolean = false
     var allMoviesList = mutableListOf<ListMovieModel>()
 
     var URLPATHIMAGE = "https://image.tmdb.org/t/p/w500"
@@ -77,6 +77,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     var ThirdGrouploaded = false
     var FourGrouploaded = false
     var FiveGrouploaded = false
+    var SixGrouploaded = false
     lateinit var lastSelectedMenu: View
     lateinit var lastSelectedCategory: String
 
@@ -98,7 +99,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     if (lastSelectedCategory == "Home") {
                         fatchDataContent(10766, "Novelas")
                     }
-
                     fatchDataContent(80, "Mentes Criminosas")
 
                     val formataData = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -112,15 +112,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 if (title == "Mentes Criminosas" && !SecondGrouploaded) {
                     SecondGrouploaded = true
                     fatchDataContent(27, "Noites de terror")
-                    fatchDataContent(5, "Animes")
-                    fatchDataContent(16, "Animação")
-                }
-                if(title == "Animação" && !ThirdGrouploaded){
-                    ThirdGrouploaded = true
                     var queryRecomentCritic = fetchMoviesAndUpdateList().limit(12)
                         .whereGreaterThan("vote_average", 8)
                         .orderBy("vote_count", Query.Direction.DESCENDING)
                     fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8)
+                    fatchDataContent(5, "Animes")
+                }
+                if(title == "Recomendados pela critica" && !ThirdGrouploaded){
+                    ThirdGrouploaded = true
+                    fatchDataContent(16, "Animação")
                     var query = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("distributed", "Netflix")
                     fatchDataContentWidthQuery(query, "Netflix", 7)
@@ -130,15 +130,19 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 if (title == "Netflix" && !FourGrouploaded) {
                     FourGrouploaded = true
+
                     fatchDataContent(10751, "Para toda familia")
                     fatchDataContent(878, "Ficção científica")
                     fatchDataContent(10749, "Romances")
-                    fatchDataContent(37, "Faroeste")
                 }
                 if (title == "Romances" && !FiveGrouploaded) {
                     FiveGrouploaded = true
+                    fatchDataContent(37, "Faroeste")
                     fatchDataContent(10764, "Realitys")
                     fatchDataContent(10402, "Música")
+                }
+                if(title == "Música" && !SixGrouploaded){
+                    SixGrouploaded = true
                     fatchDataContent(99, "Documentário")
                     fatchDataContent(10767, "Talk shows")
                 }
@@ -161,9 +165,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
         MoviesListFragment.setOnItemTvOnlineClickListener { tv ->
-            val intent = Intent(this, VideoPlayActivity::class.java)
-            intent.putExtra("movie", createMovieModelFromTvItem(tv))
-            startActivity(intent)
+            println(tv)
+            if(tv is ChannelTVModel){
+                val intent = Intent(this, VideoPlayActivity::class.java)
+                intent.putExtra("movie", createMovieModelFromTvItem(tv))
+                startActivity(intent)
+            }else{
+                Toast.makeText(this, "Canal offline", Toast.LENGTH_LONG).show()
+            }
+
         }
 
 
@@ -220,8 +230,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             getListTvLive()
         }
 
-
-
         btnHome.setOnKeyListener(this)
         btnHome.setOnClickListener {
             selectedMenu = Constants.MENU_HOME
@@ -274,30 +282,46 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     private fun onGetCategorys(key: String, isHome: Boolean?) {
         clearList()
         MoviesListFragment.clearAll()
-        loadingMovies = true
         FirstGrouploaded = false
         SecondGrouploaded = false
         ThirdGrouploaded = false
         FourGrouploaded = false
         FiveGrouploaded = false
-        if (isHome == true) {
-            GetRecentsWatchList()
-        } else {
-            GetPopularityMovies(key, true)
+        SixGrouploaded = false
+        if(loadingMovies == true){
+            Toast.makeText(this, "Aguarde o carregamento atual finalizar", Toast.LENGTH_LONG).show()
+            return
+        }else {
+            loadingMovies = true
+            if (isHome == true) {
+                GetRecentsWatchList()
+            } else {
+                GetPopularityMovies(key, true)
+            }
+            lastSelectedCategory = key
         }
-        lastSelectedCategory = key
     }
 
     private fun getListTvLive() {
+        loadingMovies = true
         clearList()
         clearMainMovie()
         try {
             loadingDialog.show()
 
+            val user = getCurrentUser()
+            if(user?.iptv_list_link != null && user.iptv_list_link != "" && user?.use_default_list_tv == false){
+                val DecryptedLink = Common.decrypt(user.iptv_list_link)
+                val (baseUrl, endpoint) = Common.parseBaseUrlAndEndpoint(DecryptedLink)
+                getListITvOnline(baseUrl, endpoint)
+                return
+            }
+
             var query=  fetchGetLinkUrlTv().limit(1).whereEqualTo("isActive", true)
             query
                 .get()
                 .addOnSuccessListener { documents ->
+                    loadingMovies = false
                     val firstDocument = documents.firstOrNull()
                     println(firstDocument)
                     if (firstDocument != null) {
@@ -305,54 +329,12 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         if (firstMovie?.link != null) {
                             val DecryptedLink = Common.decrypt(firstMovie?.link)
                             val (baseUrl, endpoint) = Common.parseBaseUrlAndEndpoint(DecryptedLink)
-                            val fullUrl = "$baseUrl$endpoint"
-                            println(baseUrl)
-                            println(fullUrl)
-
-                            val apiService = ApiClient.getApiClient(baseUrl)
-                            apiService.fetchDataM3u(fullUrl).enqueue(object : Callback<String> {
-                                override fun onResponse(call: Call<String>, response: Response<String>) {
-                                    if (response.isSuccessful) {
-                                        val playlistText = response.body()
-                                        if (playlistText != null) {
-                                            val playlistItem = parseM3uPlaylist(playlistText)
-                                            val groupedItems =
-                                                playlistItem.groupBy { it.groupTitlePattern ?: "Outros" }
-                                            try {
-                                                groupedItems.map { (category, items) ->
-                                                    if (items.isNotEmpty()) {
-                                                        val listItem = ListChannelTVModel(
-                                                            list = items.toMutableList(),
-                                                            title = category
-                                                        )
-                                                        MoviesListFragment.bindDataTvOnline(listItem)
-                                                    }
-                                                }
-                                            } catch (e: Exception) {
-                                                Toast.makeText(
-                                                    applicationContext,
-                                                    "Erro: 14; Falha ao buscar canais",
-                                                    Toast.LENGTH_SHORT
-                                                ) .show()
-                                            }
-                                        }
-                                    }
-                                    loadingDialog.hide()
-                                }
-                                override fun onFailure(call: Call<String>, t: Throwable) {
-                                    loadingDialog.hide()
-                                    Toast.makeText(
-                                        applicationContext,
-                                        "Falha ao buscar canais",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    println(t)
-                                }
-                            })
+                            getListITvOnline(baseUrl, endpoint)
                         }
                     }
                 }
                 .addOnFailureListener {
+                    loadingMovies = false
                     loadingDialog.hide()
                     Toast.makeText(
                         applicationContext,
@@ -368,7 +350,57 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 "Não foi possivel carregar lista de canais",
                 Toast.LENGTH_LONG
             ).show()
+            loadingMovies = false
         }
+    }
+
+    fun getListITvOnline(baseUrl: String, endpoint: String) {
+        val fullUrl = "$baseUrl$endpoint"
+        val apiService = ApiClient.getApiClient(baseUrl)
+        apiService.fetchDataM3u(fullUrl).enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                if (response.isSuccessful) {
+                    loadingMovies = false
+                    val playlistText = response.body()
+                    if (playlistText != null) {
+                        val playlistItem = parseM3uPlaylist(playlistText)
+                        val groupedItems =
+                            playlistItem.groupBy { it.groupTitlePattern ?: "Outros" }
+
+                        try {
+                            groupedItems.map { (category, items) ->
+                                println(category)
+                                if (items.isNotEmpty()) {
+                                    val listItem = ListChannelTVModel(
+                                        list = items.toMutableList(),
+                                        title = category
+                                    )
+                                    MoviesListFragment.bindDataTvOnline(listItem)
+                                }
+                            }
+                            loadingMovies = false
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                applicationContext,
+                                "Erro: 14; Falha ao buscar canais",
+                                Toast.LENGTH_SHORT
+                            ) .show()
+                            loadingMovies = false
+                        }
+                    }
+                }
+                loadingDialog.hide()
+            }
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                loadingDialog.hide()
+                Toast.makeText(
+                    applicationContext,
+                    "Falha ao buscar canais",
+                    Toast.LENGTH_SHORT
+                ).show()
+                println(t)
+            }
+        })
     }
 
     fun getCurrentUser(): UserModel? {
@@ -585,19 +617,25 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     val titleList = if (type == "Serie") "Séries populares" else "Populares"
                     movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, titleList)
-
                 }
                 loadingDialog.dismiss()
-//                GetMainMovies()
+                if(lastSelectedCategory == "Serie"){
+                    var queryNewEpsodes = fetchMoviesAndUpdateList().limit(12)
+                        .whereEqualTo("contentType", "Serie")
+                        .orderBy("updatedAt", Query.Direction.DESCENDING)
+                    fatchDataContentWidthQuery(queryNewEpsodes, "Novos episódios", 10)
+                }
                 if(lastSelectedCategory == "Home"){
                     fatchDataContent(200, "Filmes e Séries em Destaque")
                 }
                 fatchDataContent(28, "Luz, Câmera, Ação")
                 fatchDataContent(35, "Comédia")
+                loadingMovies = false
             }
             .addOnFailureListener { it
                 if(it.message == Common.msgPermissionDENIED){
                     accessDenied()
+                    loadingMovies = false
                 }
             }
     }
@@ -605,6 +643,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
     private fun fatchDataContent(idCategory: Int, title: String){
+        loadingMovies = true
         var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
@@ -627,10 +666,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                     UpdateListItem(movieList, title)
                 }
+                loadingMovies = false
+            }
+            .addOnFailureListener {
+                loadingMovies = false
             }
     }
 
     private fun fatchDataContentWidthQuery(query:  Query, title: String, idCategory: Int){
+        loadingMovies = true
         var modifiedQuery = query
         if(lastSelectedCategory != "Home"){
             modifiedQuery = query.whereEqualTo("contentType", lastSelectedCategory)
@@ -651,6 +695,10 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, title)
                 }
+                loadingMovies = false
+            }
+            .addOnFailureListener {
+                loadingMovies = false
             }
     }
 

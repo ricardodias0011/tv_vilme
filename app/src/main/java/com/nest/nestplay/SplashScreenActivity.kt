@@ -98,6 +98,7 @@ class SplashScreenActivity: FragmentActivity() {
         } else {
             Handler(Looper.getMainLooper()).postDelayed({
                 val i = Intent(this, MainActivity::class.java)
+                    i.putExtra("date", today)
                 startActivity(i)
                 finish()
             }, 3000)

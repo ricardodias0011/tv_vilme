@@ -13,5 +13,6 @@ data class ListEpisodesModel(
     val subtitles: List<String>? = listOf(),
     val urls_subtitle: List<String>? = listOf(),
     val last_seen: Timestamp? = null,
-    var idEpsode: String? = ""
+    var idEpsode: String? = "",
+    var updatedAt: Timestamp? = null
 ): Parcelable

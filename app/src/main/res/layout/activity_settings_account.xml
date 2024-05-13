@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SettingsAccountActivity"
+    android:background="#000"
+    >
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent=".45" />
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent=".20" />
+
+    <TextView
+        android:id="@+id/settingsUserName"
+        android:layout_width="0dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginHorizontal="10dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:text="Olá"
+        android:textColor="#fff"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".4" />
+
+    <TextView
+        android:id="@+id/settingsUserEmail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginHorizontal="10dp"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="#fff"
+        android:textSize="10sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/settingsUserName"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".4" />
+
+    <TextView
+        android:id="@+id/validAccountDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="#fff"
+        android:textSize="10sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/settingsUserEmail"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent=".4" />
+    <Button
+        android:id="@+id/auth_logout"
+        android:layout_width="0dp"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginVertical="15dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_selector_primary"
+        android:fontFamily="@font/poppins_bold"
+        android:padding="8sp"
+        android:text="Deslogar"
+        android:textColor="@color/text_color_selector"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline_start"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/historicMoviesListSettings"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/guideline_start"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

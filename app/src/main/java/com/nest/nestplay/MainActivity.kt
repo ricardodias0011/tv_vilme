@@ -13,6 +13,7 @@ import com.google.gson.Gson
 import com.nest.nestplay.databinding.ActivityMainBinding
 import com.nest.nestplay.model.UserModel
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
@@ -24,21 +25,24 @@ class MainActivity : FragmentActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         var today = intent.getIntExtra("date", 0)
-
+        val date = if (today != 0) {
+            Date(today.toLong())
+        } else {
+            Date()
+        }
         auth = Firebase.auth
-
         binding.authLoginEnter.setOnClickListener {
             val email = binding.authLoginEmail.text.toString().trim()
             val password = binding.authLoginPassword.text.toString().trim()
             if(!email.isEmpty() && !password.isEmpty()){
-                AuthLoginWithEmailAndPassword(email, password, today)
+                AuthLoginWithEmailAndPassword(email, password, date)
             }else{
                 Toast.makeText(applicationContext, "Preencha todos os campos", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun AuthLoginWithEmailAndPassword(email: String, password: String, today: Int) {
+    private fun AuthLoginWithEmailAndPassword(email: String, password: String, today: Date) {
         binding.authLoginEnter.setText("Carregando...")
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener{task ->
             if(task.isSuccessful){

@@ -69,7 +69,7 @@ class GenreActivity : FragmentActivity() {
 
         val recyclerViewGenreList = binding.categoryList
         recyclerViewGenreList.layoutManager = LinearLayoutManager(this)
-        val genreList = Genres.genres
+        val genreList = Genres.genres.filter { it.id != 2024 }
         adpterLintGenre = GenreListAdpter(this, genreList)
         recyclerViewGenreList.adapter = adpterLintGenre
 

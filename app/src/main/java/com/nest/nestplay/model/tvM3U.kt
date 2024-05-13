@@ -1,6 +1,8 @@
 package com.nest.nestplay.model
 
+import android.content.Context
 import android.os.Parcelable
+import com.nest.nestplay.utils.Common
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -17,7 +19,7 @@ data class ListChannelTVModel(
     val list: MutableList<ChannelTVModel> = mutableListOf(),
     val title: String = ""
 )
-fun parseM3uPlaylist(playlistContent: String): List<ChannelTVModel> {
+fun parseM3uPlaylist(playlistContent: String, context: Context): List<ChannelTVModel> {
     val channels = mutableListOf<ChannelTVModel>()
     val lines = playlistContent.trim().split("\n")
 
@@ -28,7 +30,9 @@ fun parseM3uPlaylist(playlistContent: String): List<ChannelTVModel> {
     var currentStreamUrl = ""
     var currentGroupTitle = ""
 
-    val maxLines = minOf(lines.size, 991)
+    try{
+
+    val maxLines = minOf(lines.size, 600)
 
     for (i in 0 until maxLines) {
         val line = lines[i].trim()
@@ -70,6 +74,9 @@ fun parseM3uPlaylist(playlistContent: String): List<ChannelTVModel> {
             currentStreamUrl = ""
             currentGroupTitle = ""
         }
+    }
+    }catch (e: Exception){
+        Common.errorModal(context, "Erro ao carregar canais", "Não foi possível carregar lista de canais devido a um error desconhecido.")
     }
 
     return channels

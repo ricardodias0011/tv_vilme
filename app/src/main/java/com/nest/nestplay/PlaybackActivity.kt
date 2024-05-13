@@ -106,7 +106,6 @@ class PlaybackFragment : VideoSupportFragment() {
             true
         }
 
-
         transporGlue.playerAdapter.mediaPlayer.setOnCompletionListener {
             if (movieDate?.contentType == "Serie" && data?.isTvLink == false){
                 var nextEpisode = data?.listEpsodes?.find { it.ep_number == data.current_ep?.plus(1) }
@@ -155,7 +154,7 @@ class PlaybackFragment : VideoSupportFragment() {
                             GeteCurrentTime(null, data, true)
                             tojump = true
                         }
-                        jumpHandler.postDelayed(this, 500)
+                        jumpHandler.postDelayed(this, 400)
                     }
                 }
             }
@@ -186,16 +185,16 @@ class PlaybackFragment : VideoSupportFragment() {
                         ResetToJumPLogn()
                         GeteCurrentTime(currentPosition, data, null)
                     }
-                    when(keyCode){
-                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                            val newPosition = currentPosition + 10_000
-                            transporGlue.playerAdapter.seekTo(newPosition)
-                        }
-                        KeyEvent.KEYCODE_DPAD_LEFT -> {
-                            val newPosition = currentPosition - 10_000
-                            transporGlue.playerAdapter.seekTo(newPosition)
-                        }
-                    }
+//                    when(keyCode){
+//                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+//                            val newPosition = currentPosition + 10_000
+//                            transporGlue.playerAdapter.seekTo(newPosition)
+//                        }
+//                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+//                            val newPosition = currentPosition - 10_000
+//                            transporGlue.playerAdapter.seekTo(newPosition)
+//                        }
+//                    }
                 }
                 else {
                     when(keyCode){
@@ -461,8 +460,6 @@ class PlaybackFragment : VideoSupportFragment() {
                     .document(id)
                     .get()
                     .addOnSuccessListener{document ->
-
-
                         val user = document.toObject(UserModel::class.java)
                         val currentScreens = user?.currentScreens ?: emptyList()
                         val csSize = currentScreens.size
@@ -508,7 +505,14 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
     }
-
+    override fun onResume() {
+        super.onResume()
+        updateAndVerifyScreens(false)
+    }
+    override fun onStop() {
+        super.onStop()
+        updateAndVerifyScreens(true)
+    }
     override fun onDestroy() {
         super.onDestroy()
         updateAndVerifyScreens(true)

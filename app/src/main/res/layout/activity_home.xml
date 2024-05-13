@@ -230,9 +230,23 @@
                 android:id="@+id/btn_favs"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
+                android:visibility="gone"
                 android:layout_marginLeft="5dp"
                 android:background="@drawable/selector_menu"
                 android:drawableLeft="@drawable/baseline_view_list_24"
+                android:drawablePadding="16dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:gravity="center_vertical"
+                android:text=""
+                android:textColor="@drawable/menu_text" />
+            <TextView
+                android:id="@+id/btn_settings"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/selector_menu"
+                android:drawableLeft="@drawable/baseline_settings_24"
                 android:drawablePadding="16dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
@@ -259,7 +273,7 @@
             android:layout_height="wrap_content"
             android:text=""
             android:padding="10dp"
-            android:textColor="#BFBFBF"
+            android:textColor="#fff"
             android:textSize="20sp"
             android:textStyle="bold"/>
 

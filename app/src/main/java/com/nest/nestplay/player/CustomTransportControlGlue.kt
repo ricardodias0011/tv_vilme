@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.leanback.media.PlaybackGlue
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.Action
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -26,6 +27,36 @@ class CustomTransportControlGlue(
     private val forwardAction = PlaybackControlsRow.FastForwardAction(context)
     private val rewindAction = PlaybackControlsRow.RewindAction(context)
 
+    init {
+//        val path = Environment.getExternalStorageDirectory().absolutePath + "/seek/frame_%04d.jpg"
+        if (isPrepared) {
+            setSeekProvider(
+                PlaybackSeekDiskDataProvider(
+                    duration,
+                    duration / 100,
+                    PlaybackSeekDiskDataProvider.path
+                )
+            )
+        } else {
+            addPlayerCallback(object : PlayerCallback() {
+                override fun onPreparedStateChanged(glue: PlaybackGlue) {
+                    if (glue.isPrepared) {
+                        glue.removePlayerCallback(this)
+                        val transportControlGlue = glue as PlaybackTransportControlGlue<*>
+                        transportControlGlue.setSeekProvider(
+                            PlaybackSeekDiskDataProvider(
+                                transportControlGlue.duration,
+                                transportControlGlue.duration / 100,
+                                PlaybackSeekDiskDataProvider.path
+                            )
+                        )
+                    }
+                }
+            })
+        }
+        isSeekEnabled = false
+    }
+
     private val subtitlesAction = object : PlaybackControlsRow.ShuffleAction(context) {
         init {
             icon = ContextCompat.getDrawable(context, R.drawable.ic_subtitles)
@@ -43,12 +74,10 @@ class CustomTransportControlGlue(
     }
 
     fun startVideoAtTime(timeMillis: Long) {
-        println("PULAR PARA ${timeMillis}")
-        try{
+        try {
             playerAdapter.seekTo(timeMillis)
             playerAdapter.play()
-        }
-        catch(e: Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             playerAdapter.reset()
             playerAdapter.play()
@@ -61,23 +90,25 @@ class CustomTransportControlGlue(
 
     override fun onCreatePrimaryActions(primaryActionsAdapter: ArrayObjectAdapter) {
         super.onCreatePrimaryActions(primaryActionsAdapter)
-//        primaryActionsAdapter.add(subtitlesAction)
-//        primaryActionsAdapter.add(qualityChangerAction)
     }
 
     override fun onCreateSecondaryActions(secondaryActionsAdapter: ArrayObjectAdapter?) {
         super.onCreateSecondaryActions(secondaryActionsAdapter)
         if (secondaryActionsAdapter != null) {
-//            secondaryActionsAdapter.add(qualityChangerAction)
         }
     }
 
     override fun onActionClicked(action: Action?) {
         when (action){
-            forwardAction -> playerAdapter.fastForward()
+            forwardAction -> {
+                val currentTime = getCurrentPosition()
+                val desiredTime = currentTime + 10000
+                println("CustomTransportControlGlue Avançar para o tempo: $desiredTime")
+                if (desiredTime <= playerAdapter.duration) {
+                    playerAdapter.seekTo(desiredTime)
+                }
+            }
             rewindAction -> playerAdapter.rewind()
-//            subtitlesAction -> playerAdapter.subtitle(context, currentMovie)
-//            qualityChangerAction -> playerAdapter.highQuality(context)
             else -> super.onActionClicked(action)
         }
         onUpdateProgress()

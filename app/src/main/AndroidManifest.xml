@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
@@ -19,6 +22,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NestPlay">
         <activity
+            android:name=".SettingsAccountActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MakePaymentActivity"
+            android:exported="false" />
+        <activity
             android:name=".PaymentRequiredActivity"
             android:exported="false" />
         <activity
@@ -31,8 +40,8 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:logo="@mipmap/ic_launcher"
-            android:theme="@style/Theme.NestPlay"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.NestPlay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -58,6 +67,7 @@
         <activity
             android:name=".MovieFavActivity"
             android:exported="false" />
+
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

@@ -1,19 +1,26 @@
 package com.nest.nestplay
 
+import android.Manifest
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
+import com.nest.nestplay.databinding.ActivitySplashScreenBinding
 import com.nest.nestplay.model.UserModel
+import com.nest.nestplay.utils.Common
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -23,10 +30,41 @@ import java.util.Locale
 import java.util.TimeZone
 
 class SplashScreenActivity: FragmentActivity() {
+    lateinit var loadingDialog: Dialog
+    private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
+    private val STORAGE_PERMISSION_REQUEST_CODE = 123
+    private lateinit var binding: ActivitySplashScreenBinding
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash_screen)
+        binding = ActivitySplashScreenBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        loadingDialog = Common.loadingDialog(this)
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
+                STORAGE_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            // Permissões já concedidas, execute o código relacionado ao acesso ao armazenamento externo aqui
+        }
+
+
 
         var today = Date()
         val ntpServerUrl = "http://worldtimeapi.org/api/timezone/America/Sao_Paulo"
@@ -54,7 +92,7 @@ class SplashScreenActivity: FragmentActivity() {
         if (auth.currentUser != null) {
             val db = Firebase.firestore
             val docRef = db.collection("users")
-
+            binding.textVersionApp.text = "V 1.0.0"
             auth.uid?.let {
                 docRef
                     .document(it)
@@ -65,8 +103,13 @@ class SplashScreenActivity: FragmentActivity() {
                         val editor = sharedPreferences.edit()
                         val gson = Gson()
                         val userJson = gson.toJson(document.toObject(UserModel::class.java))
-                        editor.putString("user", userJson)
-                        editor.apply()
+                        if (userJson != null) {
+                            val userJsonMap = gson.fromJson(userJson, Map::class.java) as MutableMap<String, Any>
+                            userJsonMap["id"] = document.id
+                            val modifiedUserJson = gson.toJson(userJsonMap)
+                            editor.putString("user", modifiedUserJson)
+                            editor.apply()
+                        }
                         val expirePlanDate = user?.expirePlanDate?.toDate()
                         val timeZone = TimeZone.getTimeZone("America/Sao_Paulo")
                         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -98,7 +141,7 @@ class SplashScreenActivity: FragmentActivity() {
         } else {
             Handler(Looper.getMainLooper()).postDelayed({
                 val i = Intent(this, MainActivity::class.java)
-                    i.putExtra("date", today)
+                i.putExtra("date", today)
                 startActivity(i)
                 finish()
             }, 3000)
@@ -111,5 +154,19 @@ class SplashScreenActivity: FragmentActivity() {
 
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         return sdf.parse(dateTimeString) ?: Date()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            } else {
+           }
+        }
     }
 }

@@ -64,6 +64,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     lateinit var btnSeries: TextView
     lateinit var btnGenres: TextView
     lateinit var btnFavs: TextView
+    lateinit var btnSettings: TextView
     lateinit var loadingDialog: Dialog
     var loadingMovies: Boolean = false
     var allMoviesList = mutableListOf<ListMovieModel>()
@@ -92,14 +93,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         navBar = findViewById(R.id.blfNavBar)
 
         MoviesListFragment.setOnContentSelectedListener { movie, title ->
+            var _lc = lastSelectedCategory
             if (lastRowTitle != title) {
                 lastRowTitle = title
                 if (title == "Luz, Câmera, Ação" && !FirstGrouploaded) {
                     FirstGrouploaded = true
                     if (lastSelectedCategory == "Home") {
-                        fatchDataContent(10766, "Novelas")
+                        fatchDataContent(10766, "Novelas", _lc)
                     }
-                    fatchDataContent(80, "Mentes Criminosas")
+                    fatchDataContent(80, "Mentes Criminosas", _lc)
 
                     val formataData = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     val currentDate = Date()
@@ -107,44 +109,44 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     var query = fetchMoviesAndUpdateList().limit(12)
                         .whereLessThan("release_date", todayString)
                         .orderBy("release_date", Query.Direction.DESCENDING)
-                    fatchDataContentWidthQuery(query, "Lançados recentemente", 3)
+                    fatchDataContentWidthQuery(query, "Lançados recentemente", 3, lastSelectedCategory)
                 }
                 if (title == "Mentes Criminosas" && !SecondGrouploaded) {
                     SecondGrouploaded = true
-                    fatchDataContent(27, "Noites de terror")
+                    fatchDataContent(27, "Noites de terror", _lc)
                     var queryRecomentCritic = fetchMoviesAndUpdateList().limit(12)
                         .whereGreaterThan("vote_average", 8)
                         .orderBy("vote_count", Query.Direction.DESCENDING)
-                    fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8)
-                    fatchDataContent(5, "Animes")
+                    fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8, _lc)
+                    fatchDataContent(5, "Animes", _lc)
                 }
                 if(title == "Recomendados pela critica" && !ThirdGrouploaded){
                     ThirdGrouploaded = true
-                    fatchDataContent(16, "Animação")
+                    fatchDataContent(16, "Animação", _lc)
                     var query = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("distributed", "Netflix")
-                    fatchDataContentWidthQuery(query, "Netflix", 7)
+                    fatchDataContentWidthQuery(query, "Netflix", 7, _lc)
                     var query2 = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("distributed", "Marvel")
-                    fatchDataContentWidthQuery(query2, "Heróis da Marvel", 8)
+                    fatchDataContentWidthQuery(query2, "Heróis da Marvel", 8, _lc)
                 }
                 if (title == "Netflix" && !FourGrouploaded) {
                     FourGrouploaded = true
 
-                    fatchDataContent(10751, "Para toda familia")
-                    fatchDataContent(878, "Ficção científica")
-                    fatchDataContent(10749, "Romances")
+                    fatchDataContent(10751, "Para toda familia", _lc)
+                    fatchDataContent(878, "Ficção científica", _lc)
+                    fatchDataContent(10749, "Romances", _lc)
                 }
                 if (title == "Romances" && !FiveGrouploaded) {
                     FiveGrouploaded = true
-                    fatchDataContent(37, "Faroeste")
-                    fatchDataContent(10764, "Realitys")
-                    fatchDataContent(10402, "Música")
+                    fatchDataContent(37, "Faroeste", _lc)
+                    fatchDataContent(10764, "Realitys", _lc)
+                    fatchDataContent(10402, "Música", _lc)
                 }
                 if(title == "Música" && !SixGrouploaded){
                     SixGrouploaded = true
-                    fatchDataContent(99, "Documentário")
-                    fatchDataContent(10767, "Talk shows")
+                    fatchDataContent(99, "Documentário", _lc)
+                    fatchDataContent(10767, "Talk shows", _lc)
                 }
             }
 
@@ -192,7 +194,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         }
 
 
-        ChangeTextCatogy("Home")
+        ChangeTextCatogy("Início")
         onGetCategorys("Home", true)
         val onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
             if (hasFocus) {
@@ -213,6 +215,12 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnSeries = binding.btnSeries
         btnGenres = binding.btnGenres
         btnTvLive = binding.btnTv
+        btnSettings = binding.btnSettings
+
+        btnSettings.setOnClickListener {
+            val intent = Intent(this, SettingsAccountActivity::class.java)
+            startActivity(intent)
+        }
 
         val user = getCurrentUser()
         if(user?.activeOnlineTv == true){
@@ -225,6 +233,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         btnTvLive.onFocusChangeListener = onFocusChangeListener
 
         btnTvLive.setOnClickListener {
+            lastSelectedCategory = "Tv online"
             selectedMenu = Constants.MENU_TV
             ChangeTextCatogy("Tv online")
             getListTvLive()
@@ -363,10 +372,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     loadingMovies = false
                     val playlistText = response.body()
                     if (playlistText != null) {
-                        val playlistItem = parseM3uPlaylist(playlistText)
+                        val playlistItem = parseM3uPlaylist(playlistText, applicationContext)
                         val groupedItems =
                             playlistItem.groupBy { it.groupTitlePattern ?: "Outros" }
-
                         try {
                             groupedItems.map { (category, items) ->
                                 println(category)
@@ -375,7 +383,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                                         list = items.toMutableList(),
                                         title = category
                                     )
-                                    MoviesListFragment.bindDataTvOnline(listItem)
+                                    if(lastSelectedCategory == "Tv online"){
+                                        MoviesListFragment.bindDataTvOnline(listItem)
+                                    }
                                 }
                             }
                             loadingMovies = false
@@ -449,6 +459,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         view.isActivated = true
                         lastSelectedMenu = view
                         lastSelectedCategory = "Serie"
+                        closeMenu()
+                    }
+                    R.id.btn_settings -> {
                         closeMenu()
                     }
                     R.id.btn_genres -> {
@@ -581,7 +594,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             }
     }
 
-    private fun GetPopularityMovies(type: String?, updateFirstBanner: Boolean?) {
+    private fun GetPopularityMovies(type: String, updateFirstBanner: Boolean?) {
         loadingDialog.show()
         if(updateFirstBanner == true){
             clearList()
@@ -623,13 +636,13 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     var queryNewEpsodes = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("contentType", "Serie")
                         .orderBy("updatedAt", Query.Direction.DESCENDING)
-                    fatchDataContentWidthQuery(queryNewEpsodes, "Novos episódios", 10)
+                    fatchDataContentWidthQuery(queryNewEpsodes, "Novos episódios", 10, type)
                 }
                 if(lastSelectedCategory == "Home"){
-                    fatchDataContent(200, "Filmes e Séries em Destaque")
+                    fatchDataContent(200, "Filmes e Séries em Destaque", type)
                 }
-                fatchDataContent(28, "Luz, Câmera, Ação")
-                fatchDataContent(35, "Comédia")
+                fatchDataContent(28, "Luz, Câmera, Ação", type)
+                fatchDataContent(35, "Comédia", type)
                 loadingMovies = false
             }
             .addOnFailureListener { it
@@ -642,7 +655,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
 
-    private fun fatchDataContent(idCategory: Int, title: String){
+    private fun fatchDataContent(idCategory: Int, title: String, currentCategory: String){
         loadingMovies = true
         var query=  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
@@ -664,7 +677,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     if(idCategory != 200){
                         movieList.add(createMoreItem(idCategory))
                     }
-                    UpdateListItem(movieList, title)
+                    if(currentCategory == currentCategory){
+                        UpdateListItem(movieList, title)
+                    }
                 }
                 loadingMovies = false
             }
@@ -673,7 +688,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             }
     }
 
-    private fun fatchDataContentWidthQuery(query:  Query, title: String, idCategory: Int){
+    private fun fatchDataContentWidthQuery(query:  Query, title: String, idCategory: Int, Category: String){
         loadingMovies = true
         var modifiedQuery = query
         if(lastSelectedCategory != "Home"){
@@ -691,7 +706,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         movieList.add(movie)
                     }
                 }
-                if(!movieList.isEmpty()){
+                if(!movieList.isEmpty() && Category == lastSelectedCategory){
                     movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, title)
                 }
@@ -704,7 +719,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
     private fun UpdateListItem(movieList: MutableList<ListMovieModel.Movie>, title: String) {
-        MoviesListFragment.bindData(ListMovieModel(movieList.toMutableList(), title))
+            MoviesListFragment.bindData(ListMovieModel(movieList.toMutableList(), title))
     }
     private fun clearMainMovie() {
         binding.mainTitle.setText("")
@@ -805,9 +820,10 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnSearch.text = "Pesquisar"
         binding.btnMovies.text = "Filmes"
         binding.btnSeries.text = "Séries"
-        binding.btnFavs.text = "Minha lista"
-        binding.btnGenres.text = "Género"
+//        binding.btnFavs.text = "Minha lista"
+        binding.btnGenres.text = "Categorias"
         binding.btnTv.text = "Tv Online"
+        binding.btnSettings.text = "Conta"
 
         navBar.requestLayout()
         navBar.setBackgroundResource(R.drawable.banner_gradient)
@@ -820,9 +836,10 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding.btnSearch.text = ""
         binding.btnMovies.text = ""
         binding.btnSeries.text = ""
-        binding.btnFavs.text = ""
+//        binding.btnFavs.text = ""
         binding.btnGenres.text = ""
         binding.btnTv.text = ""
+        binding.btnSettings.text = ""
         navBar.requestLayout()
         navBar.setBackgroundResource(R.drawable.no_selected_bg)
         navBar.layoutParams.width = Common.getWidthInPercent(this, 7)
@@ -937,7 +954,8 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             original_title_lowcase = "",
             contentType = "Movie",
             subtitles = listOf(),
-            urls_subtitle = listOf()
+            urls_subtitle = listOf(),
+            isTvLink = true
         )
     }
 

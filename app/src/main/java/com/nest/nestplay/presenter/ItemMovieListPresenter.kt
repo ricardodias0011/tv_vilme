@@ -17,8 +17,8 @@ class MovieListItemPresenter : Presenter() {
             LayoutInflater.from(parent?.context).inflate(R.layout.movie_item, parent, false)
 
         val params = view.layoutParams
-        params.width = getWidthInPercent(parent!!.context, 12)
-        params.height = getHeightInPercent(parent!!.context, 30)
+        params.width = getWidthInPercent(parent!!.context, 14)
+        params.height = getHeightInPercent(parent!!.context, 34)
         val roundedBackgroundDrawable = ContextCompat.getDrawable(parent.context, R.drawable.item_movie_bg)
         view.background =roundedBackgroundDrawable
         view.setOnFocusChangeListener { view, hasFocus ->

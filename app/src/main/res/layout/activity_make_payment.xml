@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000"
+    tools:context=".MakePaymentActivity">
+
+    <TextView
+        android:id="@+id/textTitlePaymentMake"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins_bold"
+        android:text="Gerendo QrCode Pix..."
+        android:textColor="#FFFEFE"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@+id/textSubTitlePaymentMake"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.499"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/textSubTitlePaymentMake"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFEFE"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@+id/QrCodePayment"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.499"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/QrCodePayment"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_margin="-2dp"
+        android:background="@drawable/item_cotent_movie_bg"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="MissingConstraints" />
+
+    <Button
+        android:id="@+id/closeBtnMakePayment"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_selector"
+        android:focusable="true"
+        android:fontFamily="sans-serif-black"
+        android:padding="8dp"
+        android:focusedByDefault="false"
+        android:text="Cancelar"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="@color/text_color_selector"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/QrCodePayment" />
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/animationLoadingMakePayment"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/loading" />
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/successMakePayment"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/success" />
+    <TextView
+        android:id="@+id/footerTextHelp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Em caso de dúvidas, entre em contato conosco pelo e-mail: vilme@gmail.com"
+        android:textColor="#FFFEFE"
+        android:textSize="13sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/closeBtnMakePayment"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

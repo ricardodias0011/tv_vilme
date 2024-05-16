@@ -8,7 +8,7 @@ import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
 import com.nest.nestplay.model.MovieModel
 class MovieItemPresenter : Presenter() {
-    override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
 
         val view =
             LayoutInflater.from(parent?.context).inflate(R.layout.movie_item, parent, false)
@@ -40,7 +40,7 @@ class MovieItemPresenter : Presenter() {
     }
 
 
-    override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any?) {
         val content = item as MovieModel
 
         val imageview = viewHolder!!.view.findViewById<ImageView>(R.id.posteritemmovie)
@@ -52,7 +52,7 @@ class MovieItemPresenter : Presenter() {
 
     }
 
-    override fun onUnbindViewHolder(viewHolder: ViewHolder?) {
+    override fun onUnbindViewHolder(viewHolder: ViewHolder) {
     }
 }
 

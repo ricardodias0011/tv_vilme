@@ -96,14 +96,20 @@ class PlaybackFragment : VideoSupportFragment() {
         transporGlue.loadMovieInfo(data)
         transporGlue.playerAdapter.play()
 
+        var repeatError = 0
+
         transporGlue.playerAdapter.mediaPlayer.setOnErrorListener { mp, what, extra ->
-            if(data?.isTvLink == false){
+            repeatError = repeatError + 1
+            if(data?.isTvLink == false && repeatError > 2){
                 Common.errorModal(
                     requireContext(),
                     "Erro ao reproduzir conteúdo",
                     "Não foi possível reproduzir o conteúdo devido a um erro interno.")
             }
             true
+        }
+        transporGlue.playerAdapter.setOnPreparedListener{
+            repeatError = 0
         }
 
         transporGlue.playerAdapter.mediaPlayer.setOnCompletionListener {
@@ -139,7 +145,7 @@ class PlaybackFragment : VideoSupportFragment() {
                         println("Tempo loop update time: current position ${currentPosition}")
                         GeteCurrentTime(currentPosition, data, null)
                     }
-                    handler.postDelayed(this, 5 * 60 * 1000)
+                    handler.postDelayed(this, 4 * 60 * 1000)
                 }
             }
         }
@@ -469,6 +475,8 @@ class PlaybackFragment : VideoSupportFragment() {
 
                         for (screen in currentScreens){
                             if(sesonMovieId != screen){
+                                println(sesonMovieId)
+                                println(screen)
                                 listSeassonDate.add(screen)
                             }
                         }

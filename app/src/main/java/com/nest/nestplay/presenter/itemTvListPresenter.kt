@@ -11,7 +11,7 @@ import com.nest.nestplay.R
 import com.nest.nestplay.model.ChannelTVModel
 
 class itemTvListPresenter: Presenter() {
-    override fun onCreateViewHolder(parent: ViewGroup?): Presenter.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup): Presenter.ViewHolder {
 
         val view =
             LayoutInflater.from(parent?.context).inflate(R.layout.movie_item, parent, false)
@@ -44,7 +44,7 @@ class itemTvListPresenter: Presenter() {
     }
 
 
-    override fun onBindViewHolder(viewHolder: Presenter.ViewHolder?, item: Any?) {
+    override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any?) {
 
         val content = item as? ChannelTVModel
 
@@ -59,6 +59,6 @@ class itemTvListPresenter: Presenter() {
 
     }
 
-    override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder?) {
+    override fun onUnbindViewHolder(viewHolder: Presenter.ViewHolder) {
     }
 }

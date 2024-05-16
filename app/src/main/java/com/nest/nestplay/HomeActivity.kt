@@ -132,7 +132,6 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 }
                 if (title == "Netflix" && !FourGrouploaded) {
                     FourGrouploaded = true
-
                     fatchDataContent(10751, "Para toda familia", _lc)
                     fatchDataContent(878, "Ficção científica", _lc)
                     fatchDataContent(10749, "Romances", _lc)
@@ -222,6 +221,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             startActivity(intent)
         }
 
+
         val user = getCurrentUser()
         if(user?.activeOnlineTv == true){
             btnTvLive.visibility == View.VISIBLE
@@ -231,6 +231,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
         btnTvLive.setOnKeyListener(this)
         btnTvLive.onFocusChangeListener = onFocusChangeListener
+        btnSettings.onFocusChangeListener = onFocusChangeListener
 
         btnTvLive.setOnClickListener {
             lastSelectedCategory = "Tv online"

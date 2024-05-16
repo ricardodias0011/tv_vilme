@@ -61,6 +61,7 @@ class GenreActivity : FragmentActivity() {
         adpterMovie.onLastItemFocusChangeListener  = object : MoviesListAdpter.OnLastItemFocusChangeListener {
             override fun onLastItemFocused(movie: ListMovieModel.Movie) {
                 if(lastVisibleGet == true){
+                    println("Vamo é aki")
                     GetMovieListFavs(idGenreSelected, false)
                 }
             }
@@ -139,22 +140,22 @@ class GenreActivity : FragmentActivity() {
                     if (clear == true) {
                         listMovies.clear()
                     }
+                println("Ta vazio: ${querySnapshots.isEmpty}")
 
                     if (!querySnapshots.isEmpty) {
                         lastVisible = querySnapshots.documents[querySnapshots.size() - 1].toObject(ListMovieModel.Movie::class.java)?.popularity
                     }else{
                         lastVisibleGet = false
                     }
-                     println(querySnapshots.isEmpty)
-                    println(querySnapshots)
                     for (document in querySnapshots) {
-                        println(document)
+
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
                         movie.poster_path = URLPATHIMAGE + movie.poster_path
-                        listMovies.add(movie)
+                        if (listMovies.none { it.id == movie.id }) {
+                            listMovies.add(movie)
+                        }
                     }
                     adpterMovie.notifyDataSetChanged()
-                    println("$lastVisible $clear")
                     if(lastVisible != null && clear == false){
                         adpterMovie.onFocusItem()
                     }

@@ -52,7 +52,7 @@ android {
 dependencies {
     implementation("com.airbnb.android:lottie:6.4.0")
 
-    implementation("androidx.leanback:leanback:1.0.0")
+    implementation("androidx.leanback:leanback:1.1.0-rc02")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("com.github.bumptech.glide:glide:4.11.0")
     implementation("androidx.appcompat:appcompat:1.6.1")

@@ -9,7 +9,7 @@ import com.nest.nestplay.R
 import com.nest.nestplay.model.ListEpisodesModel
 class EpisodeosPresenter : Presenter() {
 
-    override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
 
         val view =
             LayoutInflater.from(parent?.context).inflate(R.layout.epsodeos_item, parent, false)
@@ -33,7 +33,7 @@ class EpisodeosPresenter : Presenter() {
 
         return viewHolder
     }
-    override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any?) {
         val content = item as ListEpisodesModel
 
         val textView = viewHolder!!.view.findViewById<TextView>(R.id.episode_item)
@@ -42,7 +42,7 @@ class EpisodeosPresenter : Presenter() {
         }
 
     }
-    override fun onUnbindViewHolder(viewHolder: ViewHolder?) {
+    override fun onUnbindViewHolder(viewHolder: ViewHolder) {
     }
 }
 

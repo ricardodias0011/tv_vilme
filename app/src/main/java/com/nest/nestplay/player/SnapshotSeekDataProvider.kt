@@ -1,5 +1,8 @@
 package com.nest.nestplay.player
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.leanback.widget.PlaybackSeekDataProvider
+import java.io.File
 
 class SnapshotSeekDataProvider(
     private val duration: Long,
@@ -33,12 +36,12 @@ class SnapshotSeekDataProvider(
     override fun getThumbnail(index: Int, callback: ResultCallback?) {
         super.getThumbnail(index, callback)
     }
-//    override fun loadSnapshot(position: Long): Bitmap? {
-//        val path = String.format(pathPattern, position)
-//        return if (File(path).exists()) {
-//            BitmapFactory.decodeFile(path)
-//        } else {
-//            null
-//        }
-//    }
+    fun loadSnapshot(position: Long): Bitmap? {
+        val path = String.format(pathPattern, position)
+        return if (File(path).exists()) {
+            BitmapFactory.decodeFile(path)
+        } else {
+            null
+        }
+    }
 }

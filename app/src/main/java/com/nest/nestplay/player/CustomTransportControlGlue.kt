@@ -28,12 +28,11 @@ class CustomTransportControlGlue(
     private val rewindAction = PlaybackControlsRow.RewindAction(context)
 
     init {
-//        val path = Environment.getExternalStorageDirectory().absolutePath + "/seek/frame_%04d.jpg"
         if (isPrepared) {
             setSeekProvider(
                 PlaybackSeekDiskDataProvider(
-                    duration,
                     duration / 100,
+                    currentMovie.url,
                     PlaybackSeekDiskDataProvider.path
                 )
             )
@@ -45,8 +44,8 @@ class CustomTransportControlGlue(
                         val transportControlGlue = glue as PlaybackTransportControlGlue<*>
                         transportControlGlue.setSeekProvider(
                             PlaybackSeekDiskDataProvider(
-                                transportControlGlue.duration,
-                                transportControlGlue.duration / 100,
+                                duration / 100,
+                                currentMovie.url,
                                 PlaybackSeekDiskDataProvider.path
                             )
                         )
@@ -55,12 +54,6 @@ class CustomTransportControlGlue(
             })
         }
         isSeekEnabled = false
-    }
-
-    private val subtitlesAction = object : PlaybackControlsRow.ShuffleAction(context) {
-        init {
-            icon = ContextCompat.getDrawable(context, R.drawable.ic_subtitles)
-        }
     }
 
     private val qualityChangerAction = object : PlaybackControlsRow.MoreActions(context) {
@@ -117,17 +110,18 @@ class CustomTransportControlGlue(
     override fun onPlayStateChanged() {
         super.onPlayStateChanged()
         if(playerAdapter.isPlaying){
-            host.hideControlsOverlay(true)
+            host?.hideControlsOverlay(true)
         }
     }
 
     fun hideControlsOverlay(immediate: Boolean) {
         if (immediate) {
-            host.hideControlsOverlay(true)
+            host?.hideControlsOverlay(true)
         } else {
-            host.hideControlsOverlay(false)
+            host?.hideControlsOverlay(false)
         }
     }
+
 
     override fun onKey(v: View?, keyCode: Int, event: KeyEvent?): Boolean {
         if (event != null) {
@@ -193,18 +187,22 @@ class CustomTransportControlGlue(
             .load(urlImageBG)
             .into(object : CustomTarget<Bitmap>(){
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    controlsRow.setImageBitmap(context, resource)
-                    host.notifyPlaybackRowChanged()
+                    controlsRow?.setImageBitmap(context, resource)
+                    host?.notifyPlaybackRowChanged()
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
-                    controlsRow.setImageBitmap(context, null)
-                    host.notifyPlaybackRowChanged()
+                    controlsRow?.setImageBitmap(context, null)
+                    host?.notifyPlaybackRowChanged()
                 }
 
             })
 
         playWhenPrepared()
+    }
+
+    fun removePlayerCallback() {
+
     }
 
 }

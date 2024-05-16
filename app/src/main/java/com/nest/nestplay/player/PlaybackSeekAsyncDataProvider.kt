@@ -1,6 +1,7 @@
 package com.nest.nestplay.player
 
 import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.os.AsyncTask
 import android.util.Log
 import android.util.SparseArray
@@ -10,11 +11,15 @@ import androidx.leanback.widget.PlaybackSeekDataProvider
 
 abstract class PlaybackSeekAsyncDataProvider @JvmOverloads constructor(
     cacheSize: Int = 16,
-    prefetchCacheSize: Int = 24
+    prefetchCacheSize: Int = 24,
+    linkUrl: String = "",
+    interval: Long
 ) :
     PlaybackSeekDataProvider() {
+    val videoUrl: String = linkUrl
     lateinit var mSeekPositions: LongArray
-
+    var linkUrl: String = linkUrl
+    private val mTasks: SparseArray<LoadBitmapAsyncTask> = SparseArray()
     val mCache: LruCache<Int, Bitmap?>
 
 
@@ -23,6 +28,15 @@ abstract class PlaybackSeekAsyncDataProvider @JvmOverloads constructor(
     var mLastRequestedIndex = -1
     protected fun isCancelled(task: Any): Boolean {
         return (task as AsyncTask<*, *, *>).isCancelled
+    }
+
+    init {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(videoUrl, HashMap<String, String>())
+        val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
+
+        val size = (duration / interval + 1).toInt()
+        mSeekPositions = LongArray(size) { it * interval }
     }
 
     protected abstract fun doInBackground(task: Any?, index: Int, position: Long): Bitmap
@@ -59,31 +73,11 @@ abstract class PlaybackSeekAsyncDataProvider @JvmOverloads constructor(
     }
 
     override fun getThumbnail(index: Int, callback: ResultCallback) {
-        var bitmap = mCache[index]
-        if (bitmap != null) {
-            callback.onThumbnailLoaded(bitmap, index)
-        } else {
-            bitmap = mPrefetchCache[index]
-            if (bitmap != null) {
-                mCache.put(index, bitmap)
-                mPrefetchCache.remove(index)
-                callback.onThumbnailLoaded(bitmap, index)
-            } else {
-                var task = mRequests[index]
-                if (task == null || task.isCancelled) {
-                    task = LoadBitmapTask(index, callback)
-                    mRequests.put(index, task)
-                    task!!.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
-                } else {
-                    task.mResultCallback = callback
-                }
-            }
-        }
-        if (mLastRequestedIndex != index) {
-            if (mLastRequestedIndex != -1) {
-                prefetch(mLastRequestedIndex, index > mLastRequestedIndex)
-            }
-            mLastRequestedIndex = index
+        val task = mTasks[index]
+        if (task == null) {
+            val newTask = LoadBitmapAsyncTask(index, callback)
+            mTasks.put(index, newTask)
+            newTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
         }
     }
 
@@ -113,17 +107,25 @@ abstract class PlaybackSeekAsyncDataProvider @JvmOverloads constructor(
         }
     }
 
-    override fun reset() {
-        for (i in 0 until mRequests.size()) {
-            val task = mRequests.valueAt(i)
-            task!!.cancel(true)
-        }
-        mRequests.clear()
-        mCache.evictAll()
-        mPrefetchCache.evictAll()
-        mLastRequestedIndex = -1
-    }
+    private inner class LoadBitmapAsyncTask(private val mIndex: Int, private val mResultCallback: ResultCallback) :
+        AsyncTask<Void, Void, Bitmap?>() {
 
+        override fun doInBackground(vararg voids: Void): Bitmap? {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(videoUrl, HashMap<String, String>())
+            val position = mSeekPositions[mIndex]
+            Log.d("SeekProvider", "position: $position")
+
+            val thumbnail = retriever.getFrameAtTime(position * 1000, MediaMetadataRetriever.OPTION_CLOSEST)
+            retriever.release()
+            return thumbnail
+        }
+
+        override fun onPostExecute(bitmap: Bitmap?) {
+            super.onPostExecute(bitmap)
+            mResultCallback.onThumbnailLoaded(bitmap, mIndex)
+        }
+    }
     override fun toString(): String {
         val b = StringBuilder()
         println(b)

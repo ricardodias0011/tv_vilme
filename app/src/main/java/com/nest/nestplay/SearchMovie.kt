@@ -39,7 +39,7 @@ class SearchMovie : FragmentActivity() {
         setContentView(binding.root)
 
         val recyclerViewMoviesList = binding.searchMoviesList
-        recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 4)
+        recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 5)
         adpterMovie = MoviesListAdpter(this, listMovies)
         recyclerViewMoviesList.adapter = adpterMovie
 
@@ -111,8 +111,14 @@ class SearchMovie : FragmentActivity() {
         GetSearchMovies("")
     }
 
+    private fun toCapitalize(string: String): String{
+            return string.split(" ")
+                .joinToString(" ") { it.capitalize() }
+    }
+
     private fun GetSearchMovies(query: String) {
-        val queryCapitalizeCase = query.capitalize()
+        val queryCapitalizeCase = toCapitalize(query)
+        println(queryCapitalizeCase)
 
         val tasks = mutableListOf<Task<QuerySnapshot>>().apply {
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("title", queryCapitalizeCase)

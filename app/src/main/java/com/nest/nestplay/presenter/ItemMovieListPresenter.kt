@@ -11,7 +11,7 @@ import com.nest.nestplay.R
 import com.nest.nestplay.model.ListMovieModel
 
 class MovieListItemPresenter : Presenter() {
-    override fun onCreateViewHolder(parent: ViewGroup?): ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
 
         val view =
             LayoutInflater.from(parent?.context).inflate(R.layout.movie_item, parent, false)
@@ -44,7 +44,7 @@ class MovieListItemPresenter : Presenter() {
     }
 
 
-    override fun onBindViewHolder(viewHolder: ViewHolder?, item: Any?) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any?) {
 
         val content = item as? ListMovieModel.Movie
 
@@ -59,6 +59,6 @@ class MovieListItemPresenter : Presenter() {
 
     }
 
-    override fun onUnbindViewHolder(viewHolder: ViewHolder?) {
+    override fun onUnbindViewHolder(viewHolder: ViewHolder) {
     }
 }

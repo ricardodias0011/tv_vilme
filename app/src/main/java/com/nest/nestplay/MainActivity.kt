@@ -54,12 +54,14 @@ class MainActivity : FragmentActivity() {
                         .get()
                         .addOnSuccessListener {document ->
                             val user = document.toObject(UserModel::class.java)
+                            println(user)
                             val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
                             val editor = sharedPreferences.edit()
                             val gson = Gson()
                             val userJson = gson.toJson(document.toObject(UserModel::class.java))
                             editor.putString("user", userJson)
                             editor.apply()
+
                             val expirePlanDate = user?.expirePlanDate?.toDate()
                             val timeZone = TimeZone.getTimeZone("America/Sao_Paulo")
                             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

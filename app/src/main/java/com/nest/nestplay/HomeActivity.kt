@@ -435,32 +435,53 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         closeMenu()
                     }
                     R.id.btn_tv -> {
-                        selectedMenu = Constants.MENU_TV
-                        view.isActivated = true
-                        lastSelectedMenu = view
-                        lastSelectedCategory = "Tv Online"
-                        closeMenu()
+                        if(loadingMovies == true){
+                            Toast.makeText(this, "Aguarde o carregamento atual finalizar", Toast.LENGTH_LONG).show()
+
+                        }else{
+                            selectedMenu = Constants.MENU_TV
+                            view.isActivated = true
+                            lastSelectedMenu = view
+                            lastSelectedCategory = "Tv Online"
+                            closeMenu()
+                        }
+
                     }
                     R.id.btn_home -> {
-                        selectedMenu = Constants.MENU_HOME
-                        lastSelectedCategory = "Home"
-                        view.isActivated = true
-                        lastSelectedMenu = view
-                        closeMenu()
+                        if(loadingMovies == true){
+                            Toast.makeText(this, "Aguarde o carregamento atual finalizar", Toast.LENGTH_LONG).show()
+
+                        }else{
+                            selectedMenu = Constants.MENU_HOME
+                            lastSelectedCategory = "Home"
+                            view.isActivated = true
+                            lastSelectedMenu = view
+                            closeMenu()
+                        }
                     }
                     R.id.btn_movies -> {
-                        selectedMenu = Constants.MENU_MOVIE
-                        view.isActivated = true
-                        lastSelectedMenu = view
-                        lastSelectedCategory = "Movie"
-                        closeMenu()
+                        if(loadingMovies == true){
+                            Toast.makeText(this, "Aguarde o carregamento atual finalizar", Toast.LENGTH_LONG).show()
+
+                        }else{
+                            selectedMenu = Constants.MENU_MOVIE
+                            view.isActivated = true
+                            lastSelectedMenu = view
+                            lastSelectedCategory = "Movie"
+                            closeMenu()
+                        }
                     }
                     R.id.btn_series -> {
-                        selectedMenu = Constants.MENU_SERIES
-                        view.isActivated = true
-                        lastSelectedMenu = view
-                        lastSelectedCategory = "Serie"
-                        closeMenu()
+                        if(loadingMovies == true){
+                            Toast.makeText(this, "Aguarde o carregamento atual finalizar", Toast.LENGTH_LONG).show()
+
+                        }else{
+                            selectedMenu = Constants.MENU_SERIES
+                            view.isActivated = true
+                            lastSelectedMenu = view
+                            lastSelectedCategory = "Serie"
+                            closeMenu()
+                        }
                     }
                     R.id.btn_settings -> {
                         closeMenu()
@@ -522,6 +543,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
 
     private fun GetRecentsWatchList() {
+        loadingDialog.show()
         val currentUser = Firebase.auth.currentUser
         val db = Firebase.firestore
         val docRef = db.collection("content_watch")

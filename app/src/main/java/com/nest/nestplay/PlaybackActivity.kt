@@ -33,10 +33,12 @@ import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.player.BasicMediaPlayerAdpter
 import com.nest.nestplay.player.CustomTransportControlGlue
 import com.nest.nestplay.presenter.EpisodeosPresenter
+import com.nest.nestplay.presenter.EpsideoSeparatePresenter
 import com.nest.nestplay.utils.Common
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.URL
+import kotlin.math.ceil
 
 class PlaybackFragment : VideoSupportFragment() {
 
@@ -60,6 +62,9 @@ class PlaybackFragment : VideoSupportFragment() {
     private var tojumpLong = true
 
     private var CanJumpTime = true
+
+    var episodesList = mutableListOf<ListEpisodesModel>()
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +88,10 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
         movieDate = data
+
+        if(movieDate?.listEpsodes != null){
+            episodesList = movieDate?.listEpsodes!!
+        }
 
         sesonMovieId = Common.getIpAddress(requireContext()).toString()
 
@@ -191,16 +200,16 @@ class PlaybackFragment : VideoSupportFragment() {
                         ResetToJumPLogn()
                         GeteCurrentTime(currentPosition, data, null)
                     }
-//                    when(keyCode){
-//                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
-//                            val newPosition = currentPosition + 10_000
-//                            transporGlue.playerAdapter.seekTo(newPosition)
-//                        }
-//                        KeyEvent.KEYCODE_DPAD_LEFT -> {
-//                            val newPosition = currentPosition - 10_000
-//                            transporGlue.playerAdapter.seekTo(newPosition)
-//                        }
-//                    }
+                    when(keyCode){
+                        KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                            val newPosition = currentPosition + 10_000
+                            transporGlue.playerAdapter.seekTo(newPosition)
+                        }
+                        KeyEvent.KEYCODE_DPAD_LEFT -> {
+                            val newPosition = currentPosition - 10_000
+                            transporGlue.playerAdapter.seekTo(newPosition)
+                        }
+                    }
                 }
                 else {
                     when(keyCode){
@@ -239,6 +248,11 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
 
+        val presenterSelectorSeparatesEpisodes = ArrayObjectAdapter(EpsideoSeparatePresenter())
+
+        val presenterSelector = ArrayObjectAdapter(EpisodeosPresenter())
+
+
         setOnItemViewClickedListener { itemViewHolder, item, rowViewHolder, row ->
             if(item is ListEpisodesModel && movieDate?.current_ep != item.ep_number){
                 movieDate?.current_ep = item.ep_number
@@ -256,18 +270,58 @@ class PlaybackFragment : VideoSupportFragment() {
             }
         }
 
+        setOnItemViewSelectedListener {  itemViewHolder, item, rowViewHolder, row ->
+            if (item is String) {
+                try {
+                    val rangeValues = item.split(" - ")
+                    val startEp = rangeValues[0].toInt()
+                    val endEp = rangeValues[1].toInt()
+                    println(startEp)
+                    println(endEp)
+
+                    presenterSelector.clear()
+                    val episodesListRender = episodesList.subList(startEp - 1, endEp.coerceAtMost(episodesList.size))
+                    episodesListRender.forEach {
+                        presenterSelector.add(it)
+                    }
+                    val row2 = ListRow(2L, HeaderItem(""), presenterSelector)
+                    (adapter as ArrayObjectAdapter).replace(2, row2)
+                } catch (e: Exception) {
+                    println(e)
+                }
+            }
+        }
+
         if(movieDate?.listEpsodes != null){
             (adapter.presenterSelector as ClassPresenterSelector).addClassPresenter(
                 ListRow::class.java,
                 ListRowPresenter()
             )
-            val presenterSelector = ArrayObjectAdapter(EpisodeosPresenter())
-            movieDate?.listEpsodes?.forEach {
-                presenterSelector.add(it)
+
+            val totalepInSeason =  movieDate?.listEpsodes!!.size
+            if (totalepInSeason > 0) {
+                val episodesPerBlock = 20
+                val renderEpsodeNumbers = ceil(totalepInSeason.toDouble() / episodesPerBlock).toInt()
+                for (blockNumber in 1..renderEpsodeNumbers) {
+                    val initialEp = (blockNumber - 1) * episodesPerBlock + 1
+                    var lastEp = blockNumber * episodesPerBlock
+                    if (lastEp > totalepInSeason) {
+                        lastEp = totalepInSeason
+                    }
+                    presenterSelectorSeparatesEpisodes.add("$initialEp - $lastEp")
+                }
             }
 
-            val row = ListRow(1L, HeaderItem("Episódios"), presenterSelector)
-            (adapter as ArrayObjectAdapter).add(row)
+           try {
+               movieDate?.listEpsodes?.subList(1, movieDate?.listEpsodes!!.size)?.forEach {
+                   presenterSelector.add(it)
+               }
+               val row1 = ListRow(1L, HeaderItem("Episódios"), presenterSelectorSeparatesEpisodes)
+               val row2 = ListRow(2L, HeaderItem(""), presenterSelector)
+               (adapter as ArrayObjectAdapter).addAll(1, listOf(row1, row2))
+           }catch (e:Exception){
+               println(e)
+           }
         }
         false
     }
@@ -467,16 +521,19 @@ class PlaybackFragment : VideoSupportFragment() {
                     .get()
                     .addOnSuccessListener{document ->
                         val user = document.toObject(UserModel::class.java)
-                        val currentScreens = user?.currentScreens ?: emptyList()
+                        println(user?.currentScreens)
+                        println(sesonMovieId)
+
+                        val currentScreens = user?.currentScreens?.filter { it != sesonMovieId } ?: emptyList()
                         val csSize = currentScreens.size
                         val screensAvailables = user?.screensAvailables ?: 0
 
                         var listSeassonDate = mutableListOf<String>()
+                        println(sesonMovieId)
+                        println(currentScreens)
 
                         for (screen in currentScreens){
                             if(sesonMovieId != screen){
-                                println(sesonMovieId)
-                                println(screen)
                                 listSeassonDate.add(screen)
                             }
                         }

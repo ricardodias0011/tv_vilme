@@ -79,14 +79,19 @@ class Common {
                 val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 val wifiInfo = wifiManager.connectionInfo
                 val ipAddress = wifiInfo.ipAddress
-                return InetAddress.getByAddress(
-                    byteArrayOf(
-                        (ipAddress and 0xFF).toByte(),
-                        (ipAddress shr 8 and 0xFF).toByte(),
-                        (ipAddress shr 16 and 0xFF).toByte(),
-                        (ipAddress shr 24 and 0xFF).toByte()
-                    )
-                ).hostAddress
+                try{
+                    return InetAddress.getByAddress(
+                        byteArrayOf(
+                            (ipAddress and 0xFF).toByte(),
+                            (ipAddress shr 8 and 0xFF).toByte(),
+                            (ipAddress shr 16 and 0xFF).toByte(),
+                            (ipAddress shr 24 and 0xFF).toByte()
+                        )
+                    ).hostAddress
+                }catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }

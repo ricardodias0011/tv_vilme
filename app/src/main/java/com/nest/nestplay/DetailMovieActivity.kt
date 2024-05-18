@@ -49,7 +49,7 @@ class DetailMovieActivity: FragmentActivity() {
     var firstEpisode: ListEpisodesModel? = null
 
     var wasEncrypted: Boolean = false
-//    btn_tv
+    //    btn_tv
     var movieId: Int = 0
 
     val episodesList = mutableListOf<ListEpisodesModel>()
@@ -99,7 +99,6 @@ class DetailMovieActivity: FragmentActivity() {
         }
 
 
-        GeteCurrentTime(movieId)
         ContentInFavs(movieId)
         binding.playBeginning.visibility = View.VISIBLE
         binding.moreEpisodesSerie.visibility = View.GONE
@@ -151,6 +150,7 @@ class DetailMovieActivity: FragmentActivity() {
                 detailsResponse?.current_ep = firstEpisode!!.ep_number
                 detailsResponse?.idEpsode = firstEpisode!!.idEpsode
                 detailsResponse?.season = firstEpisode?.season
+                detailsResponse?.listEpsodes = episodesList
             }
             detailsResponse?.beginningStart  = true
         }
@@ -215,11 +215,8 @@ class DetailMovieActivity: FragmentActivity() {
                 for (document in documents){
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
+                        GeteCurrentTime(movie)
                         if(movie.contentType == "Serie"){
-                            if(!epsodesIsLoader){
-                                GetSeassons(movie)
-                                epsodesIsLoader = true
-                            }
                             binding.moreLikeThis.nextFocusForwardId = binding.similarMoviesDetaillist.id
                             binding.moreEpisodesSerie.visibility = View.VISIBLE
                             binding.spinnerSelectEpNumber.visibility = View.VISIBLE
@@ -263,28 +260,38 @@ class DetailMovieActivity: FragmentActivity() {
     }
 
 
-    private fun GetSeassons(movie: MovieModel?) {
+    private fun GetSeassons(movie: MovieModel?, season: Int?) {
         val totalSeasons = movie?.total_seasons
         val listTemps = mutableListOf<String>()
-        if(totalSeasons != null){
+
+        if (totalSeasons != null) {
             for (item in 1..totalSeasons) {
                 listTemps.add("Temporada $item")
             }
         }
+
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, listTemps)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerSelectTemp.adapter = adapter
+
+        if (season != null && season >= 1 && season <= totalSeasons!!) {
+            binding.spinnerSelectTemp.setSelection(season - 1)
+        }
+
         binding.spinnerSelectTemp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val selectedItem = position + 1
-                if(movie != null){
-                    GetEpsodeos(movie.id, selectedItem)
+                val selectedSeason = position + 1
+                if (movie != null) {
+                    GetEpsodeos(movie.id, selectedSeason)
                 }
             }
+
             override fun onNothingSelected(parent: AdapterView<*>) {
+                // Implemente conforme necessário
             }
         }
     }
+
 
     private fun GetEpsodeos(id_movie: Int, seasseon: Number?){
         episodesList.clear()
@@ -316,9 +323,9 @@ class DetailMovieActivity: FragmentActivity() {
             .addOnFailureListener {
                 binding.moreEpisodesSerie.visibility = View.GONE
                 binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
-                        if(it.message == Common.msgPermissionDENIED){
-                            accessDenied()
-                    }
+                if(it.message == Common.msgPermissionDENIED){
+                    accessDenied()
+                }
             }
     }
 
@@ -408,7 +415,7 @@ class DetailMovieActivity: FragmentActivity() {
             }
     }
 
-    fun GeteCurrentTime(movieId: Int){
+    fun GeteCurrentTime(movie: MovieModel){
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
         val docRef = db.collection("content_watch")
@@ -425,6 +432,10 @@ class DetailMovieActivity: FragmentActivity() {
                         val time = firstDocument.toObject(TimeModel::class.java)
                         binding.play.text = time?.episode?.takeIf { it != 0 }?.let { "Continuar assistindo E: $it | T: ${time?.season}" } ?: "Continuar assistindo"
                         if(time?.episode != null) {
+                            if(!epsodesIsLoader){
+                                GetSeassons(movie, time?.season)
+                                epsodesIsLoader = true
+                            }
                             val docRef = db.collection("epsodes_series")
                             docRef
                                 .whereEqualTo("id_content", movieId)
@@ -445,6 +456,10 @@ class DetailMovieActivity: FragmentActivity() {
                     else{
                         binding.playBeginning.visibility = View.GONE
                         binding.play.setText("Assistir")
+                        if(!epsodesIsLoader && movie.contentType == "Serie"){
+                            GetSeassons(movie, 1)
+                            epsodesIsLoader = true
+                        }
                     }
                 }
                 .addOnFailureListener {
@@ -470,7 +485,7 @@ class DetailMovieActivity: FragmentActivity() {
                         docRef
                             .document(firstDocument.id).delete()
                             .addOnSuccessListener { documentReference ->
-                               Toast.makeText(applicationContext, "Conteúdo removido da Minha lista", Toast.LENGTH_LONG).show()
+                                Toast.makeText(applicationContext, "Conteúdo removido da Minha lista", Toast.LENGTH_LONG).show()
                                 binding.moreLikeThis.setText("Adicionar à Minha lista")
                             }
                             .addOnFailureListener { exception ->
@@ -568,7 +583,6 @@ class DetailMovieActivity: FragmentActivity() {
         super.onResume()
         wasEncrypted = false
         ContentInFavs(movieId)
-        GeteCurrentTime(movieId)
         GetMovie(movieId)
     }
 }

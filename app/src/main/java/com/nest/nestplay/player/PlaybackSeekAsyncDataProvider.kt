@@ -34,9 +34,12 @@ abstract class PlaybackSeekAsyncDataProvider @JvmOverloads constructor(
         val retriever = MediaMetadataRetriever()
         retriever.setDataSource(videoUrl, HashMap<String, String>())
         val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
-
-        val size = (duration / interval + 1).toInt()
-        mSeekPositions = LongArray(size) { it * interval }
+        if (interval > 0) {
+            val size = (duration / interval + 1).toInt()
+            mSeekPositions = LongArray(size) { it * interval }
+        } else {
+            throw IllegalArgumentException("Interval must be greater than zero")
+        }
     }
 
     protected abstract fun doInBackground(task: Any?, index: Int, position: Long): Bitmap

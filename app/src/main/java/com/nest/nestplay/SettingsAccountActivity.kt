@@ -40,7 +40,7 @@ class SettingsAccountActivity : FragmentActivity() {
         if (user != null) {
             val db = Firebase.firestore
             val docRef = db.collection("users")
-            binding.settingsUserName.text = user.email
+            binding.settingsUserEmail.text = user.email
             user.uid?.let {
                 docRef
                     .document(it)
@@ -111,29 +111,31 @@ class SettingsAccountActivity : FragmentActivity() {
                         FavDates.add(fav.createdAt)
                     }
                 }
-                val docRefMovieMyList = db.collection("catalog")
-                docRefMovieMyList
-                    .whereIn("id", FavList)
-                .get()
-                    .addOnSuccessListener { querySnapshots ->
-                        val moviesMylist = mutableListOf<ListMovieModel.Movie>()
-                        for (document in querySnapshots) {
-                            if (document != null) {
-                                val movie = document.toObject(ListMovieModel.Movie::class.java)
-                                movie.poster_path = URLPATHIMAGE + movie.poster_path
-                                moviesMylist.add(movie)
+                if(FavList.isNotEmpty()){
+                    val docRefMovieMyList = db.collection("catalog")
+                    docRefMovieMyList
+                        .whereIn("id", FavList)
+                        .get()
+                        .addOnSuccessListener { querySnapshots ->
+                            val moviesMylist = mutableListOf<ListMovieModel.Movie>()
+                            for (document in querySnapshots) {
+                                if (document != null) {
+                                    val movie = document.toObject(ListMovieModel.Movie::class.java)
+                                    movie.poster_path = URLPATHIMAGE + movie.poster_path
+                                    moviesMylist.add(movie)
+                                }
                             }
-                        }
-                        moviesMylist.sortByDescending { movie ->
-                            val index = FavList.indexOf(movie.id)
-                            if (index != -1 && index < FavDates.size) {
-                                FavDates[index].toDate()
-                            } else {
-                                Date(0)
+                            moviesMylist.sortByDescending { movie ->
+                                val index = FavList.indexOf(movie.id)
+                                if (index != -1 && index < FavDates.size) {
+                                    FavDates[index].toDate()
+                                } else {
+                                    Date(0)
+                                }
                             }
+                            MoviesListFragment.bindData(ListMovieModel(moviesMylist.toMutableList(), "Minha lista"))
                         }
-                        MoviesListFragment.bindData(ListMovieModel(moviesMylist.toMutableList(), "Minha lista"))
-                    }
+                }
             }
             .addOnFailureListener { it
                 if(it.message == Common.msgPermissionDENIED){

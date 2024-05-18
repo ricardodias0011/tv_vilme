@@ -10,12 +10,12 @@
               <deviceKey>
                 <Key>
                   <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="C:\Users\rickz\.android\avd\Android_TV_MAIN.avd" />
+                  <value value="C:\Users\rickz\.android\avd\Android_TV_1080p_API_29.avd" />
                 </Key>
               </deviceKey>
             </Target>
           </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2024-05-03T22:29:06.955578800Z" />
+          <timeTargetWasSelectedWithDropDown value="2024-05-18T15:06:03.858613900Z" />
         </State>
       </entry>
     </value>

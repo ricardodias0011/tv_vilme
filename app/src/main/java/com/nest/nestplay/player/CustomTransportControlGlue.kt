@@ -6,7 +6,6 @@ import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.View
 import androidx.core.content.ContextCompat
-import androidx.leanback.media.PlaybackGlue
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.Action
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -28,31 +27,31 @@ class CustomTransportControlGlue(
     private val rewindAction = PlaybackControlsRow.RewindAction(context)
 
     init {
-        if (isPrepared) {
-            setSeekProvider(
-                PlaybackSeekDiskDataProvider(
-                    duration / 100,
-                    currentMovie.url,
-                    PlaybackSeekDiskDataProvider.path
-                )
-            )
-        } else {
-            addPlayerCallback(object : PlayerCallback() {
-                override fun onPreparedStateChanged(glue: PlaybackGlue) {
-                    if (glue.isPrepared) {
-                        glue.removePlayerCallback(this)
-                        val transportControlGlue = glue as PlaybackTransportControlGlue<*>
-                        transportControlGlue.setSeekProvider(
-                            PlaybackSeekDiskDataProvider(
-                                duration / 100,
-                                currentMovie.url,
-                                PlaybackSeekDiskDataProvider.path
-                            )
-                        )
-                    }
-                }
-            })
-        }
+//        if (isPrepared) {
+//            setSeekProvider(
+//                PlaybackSeekDiskDataProvider(
+//                    duration / 100,
+//                    currentMovie.url,
+//                    PlaybackSeekDiskDataProvider.path
+//                )
+//            )
+//        } else {
+//            addPlayerCallback(object : PlayerCallback() {
+//                override fun onPreparedStateChanged(glue: PlaybackGlue) {
+//                    if (glue.isPrepared) {
+//                        glue.removePlayerCallback(this)
+//                        val transportControlGlue = glue as PlaybackTransportControlGlue<*>
+//                        transportControlGlue.setSeekProvider(
+//                            PlaybackSeekDiskDataProvider(
+//                                duration / 100,
+//                                currentMovie.url,
+//                                PlaybackSeekDiskDataProvider.path
+//                            )
+//                        )
+//                    }
+//                }
+//            })
+//        }
         isSeekEnabled = false
     }
 
@@ -60,10 +59,6 @@ class CustomTransportControlGlue(
         init {
             icon = ContextCompat.getDrawable(context, R.drawable.ic_sliders)
         }
-    }
-
-    init {
-        isSeekEnabled = false
     }
 
     fun startVideoAtTime(timeMillis: Long) {
@@ -154,14 +149,14 @@ class CustomTransportControlGlue(
         if(movie?.contentType == "Serie"){
             title = movie?.name
             if (movie?.current_ep != 0 || movie?.current_ep != null){
-                title = title as String? + " Ep: ${movie?.current_ep}"
+                title = title as String? + " Ep: ${movie.current_ep}"
             }
         }else{
             title = movie?.title
         }
         if(movie != null) {
             val genresList = Genres.genres.filter { it?.id in movie.genre_ids }
-            val genresNames = genresList.joinToString(" ● ") { "${it.name}" }
+            val genresNames = genresList.joinToString(" ● ") { it.name }
             var date_release = movie?.release_date
             if(movie?.contentType == "Serie"){
                 date_release = movie?.first_air_date

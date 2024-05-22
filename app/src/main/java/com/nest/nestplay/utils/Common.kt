@@ -4,18 +4,20 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.os.Handler
 import android.util.Base64
 import android.view.Window
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatTextView
 import com.nest.nestplay.R
 import com.nest.nestplay.model.UserModel
 import java.net.InetAddress
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
-
+data class Caption(val startTime: Long, val endTime: Long, val text: String)
 class Common {
     companion object {
 
@@ -194,6 +196,28 @@ class Common {
             }
 
             dialog.show()
+        }
+
+        fun showSubtitlesInTextView(textView: AppCompatTextView, subtitles: List<Caption>) {
+            var currentPosition = 0
+            val timerHandler = Handler()
+            val timerRunnable = object : Runnable {
+                override fun run() {
+                    val currentTime = System.currentTimeMillis()
+                    while (currentPosition < subtitles.size && subtitles[currentPosition].endTime < currentTime) {
+                        currentPosition++
+                    }
+                    if (currentPosition < subtitles.size && subtitles[currentPosition].startTime <= currentTime) {
+                        textView.text = subtitles[currentPosition].text
+                    } else {
+                        textView.text = ""
+                    }
+                    timerHandler.postDelayed(this, 100)
+                }
+            }
+
+            textView.text = ""
+            timerHandler.post(timerRunnable)
         }
 
     }

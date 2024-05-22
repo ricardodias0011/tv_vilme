@@ -17,12 +17,15 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/logo"
+        android:icon="@mipmap/logo2"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.NestPlay">
         <activity
             android:name=".SettingsAccountActivity"
+            android:exported="false" />
+        <activity
+            android:name=".player.VideoPlayActivity2"
             android:exported="false" />
         <activity
             android:name=".MakePaymentActivity"
@@ -35,11 +38,11 @@
             android:exported="false" />
         <activity
             android:name=".SplashScreenActivity"
-            android:banner="@mipmap/logo"
+            android:banner="@mipmap/logo2"
             android:exported="true"
-            android:icon="@mipmap/logo"
+            android:icon="@mipmap/logo2"
             android:label="@string/app_name"
-            android:logo="@mipmap/logo"
+            android:logo="@mipmap/logo2"
             android:screenOrientation="landscape"
             android:theme="@style/Theme.NestPlay">
             <intent-filter>

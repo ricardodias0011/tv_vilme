@@ -28,6 +28,7 @@ import com.nest.nestplay.model.ListEpisodesModel
 import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
+import com.nest.nestplay.player.VideoPlayActivity2
 import com.nest.nestplay.utils.Common
 import java.util.Date
 import javax.crypto.Cipher
@@ -75,7 +76,7 @@ class DetailMovieActivity: FragmentActivity() {
         loadingDialog = Common.loadingDialog(this)
 
         EpisodesListFragment.setOnItemClickListener { epsode ->
-            val intent = Intent(this, VideoPlayActivity::class.java)
+            val intent = Intent(this, VideoPlayActivity2::class.java)
             wasEncrypted = false
             detailsResponse?.url = decrypt(epsode.url)
             detailsResponse?.current_ep = epsode?.ep_number
@@ -157,7 +158,8 @@ class DetailMovieActivity: FragmentActivity() {
         if(detailsResponse?.url == null || detailsResponse?.url?.length!! < 2){
             Toast.makeText(this,"Não foi possivel reproduzir conteúdo", Toast.LENGTH_LONG).show()
         }else{
-            val intent = Intent(this, VideoPlayActivity::class.java)
+//            val intent = Intent(this, VideoPlayActivity::class.java)
+            val intent = Intent(this, VideoPlayActivity2::class.java)
             intent.putExtra("movie", detailsResponse)
             startActivity(intent)
         }

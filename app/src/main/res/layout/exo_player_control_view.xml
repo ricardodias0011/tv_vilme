@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:id="@+id/playvideo_view"
+    android:background="@drawable/player_gradient"
+    android:layout_gravity="bottom">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+   >
+
+        <ImageView
+            android:id="@+id/video_cover"
+            android:layout_width="185dp"
+            android:layout_height="140dp"
+            android:layout_alignParentBottom="true"
+            android:scaleType="centerCrop"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/video_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/video_cover"
+            android:layout_toEndOf="@+id/video_cover"
+            android:padding="4dp"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_marginLeft="5dp"
+            app:layout_constraintStart_toEndOf="@+id/video_cover"
+            app:layout_constraintTop_toTopOf="@+id/video_cover" />
+
+        <TextView
+            android:id="@+id/video_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/video_title"
+            android:layout_toEndOf="@+id/video_cover"
+            android:padding="4dp"
+            android:layout_marginLeft="5dp"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            app:layout_constraintStart_toEndOf="@+id/video_cover"
+            app:layout_constraintTop_toBottomOf="@+id/video_title" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/exo_play"-->
+<!--            style="@style/ExoMediaButton.Play"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginEnd="16dp"-->
+<!--            android:background="?attr/selectableItemBackground"-->
+<!--            android:contentDescription="@string/exo_controls_play_description" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/exo_pause"-->
+<!--            style="@style/ExoMediaButton.Pause"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginEnd="16dp"-->
+<!--            android:background="?attr/selectableItemBackground"-->
+<!--            android:contentDescription="@string/exo_controls_pause_description" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/exo_rew"-->
+<!--            style="@style/ExoMediaButton.Rewind"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginEnd="16dp"-->
+<!--            android:background="?attr/selectableItemBackground"-->
+<!--            android:contentDescription="@string/exo_controls_rewind_description" />-->
+
+<!--        <ImageButton-->
+<!--            android:id="@+id/exo_ffwd"-->
+<!--            style="@style/ExoMediaButton.FastForward"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:background="?attr/selectableItemBackground"-->
+<!--            android:contentDescription="@string/exo_controls_fastforward_description" />-->
+
+    </LinearLayout>
+
+    <com.google.android.exoplayer2.ui.DefaultTimeBar
+        android:id="@+id/exo_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:played_color="#FF0000"
+        app:scrubber_color="#FFFFFF"
+        app:buffered_color="#CCCCCC"
+        app:unplayed_color="#333333" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/exo_position"
+            style="@style/ExoStyledControls.TimeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:padding="4dp"
+            android:textColor="#FFFFFF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/exo_duration"
+            style="@style/ExoStyledControls.TimeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:padding="4dp"
+            android:textColor="#FFFFFF"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/keyboard_arrow_down"
+            android:textColor="#FFFFFF"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/exo_position"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</LinearLayout>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/selected_btn_keyboard" android:state_focused="true" />
+    <item android:drawable="@drawable/selected_active_btn" android:state_activated="true" />
     <item android:drawable="@drawable/no_select_btn" />
 </selector>

@@ -72,7 +72,6 @@ class ListEpisodesFragment : RowsSupportFragment() {
                         viewHolder?.let { holder ->
                             val itemView = holder.view
                             itemView.setBackgroundResource(R.drawable.btn_selector_keybord)
-                            println("Assim porra do caralho ${itemView.background}")
                             itemView.invalidate()
                         }
                         return row

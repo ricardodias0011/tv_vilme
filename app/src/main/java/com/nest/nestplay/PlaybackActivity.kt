@@ -276,8 +276,6 @@ class PlaybackFragment : VideoSupportFragment() {
                     val rangeValues = item.split(" - ")
                     val startEp = rangeValues[0].toInt()
                     val endEp = rangeValues[1].toInt()
-                    println(startEp)
-                    println(endEp)
 
                     presenterSelector.clear()
                     val episodesListRender = episodesList.subList(startEp - 1, endEp.coerceAtMost(episodesList.size))

@@ -4,7 +4,9 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Handler
+import android.provider.Settings
 import android.util.Base64
 import android.view.Window
 import android.widget.RadioButton
@@ -74,6 +76,22 @@ class Common {
 
                 return Pair(baseUrl, endpoint)
             }
+        }
+
+
+        fun getDeviceInformation(context: Context): String {
+            val deviceInfo = mutableMapOf<String, String>()
+            deviceInfo["Model"] = Build.MODEL
+            deviceInfo["Manufacturer"] = Build.MANUFACTURER
+            deviceInfo["Android Version"] = Build.VERSION.RELEASE
+            deviceInfo["SDK Version"] = Build.VERSION.SDK_INT.toString()
+            deviceInfo["Device Name"] = Settings.Global.getString(context.contentResolver, "device_name") ?: "Unknown"
+            deviceInfo["Brand"] = Build.BRAND
+            deviceInfo["Hardware"] = Build.HARDWARE
+            deviceInfo["Host"] = Build.HOST
+            deviceInfo["Product"] = Build.PRODUCT
+            deviceInfo["device id"] = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            return "${Build.MODEL} - ${Build.VERSION.RELEASE} - ${deviceInfo["Device Name"]} - ${Build.VERSION.SDK_INT.toString()} - ${deviceInfo["device id"]}"
         }
 
         fun getIpAddress(context: Context): String? {

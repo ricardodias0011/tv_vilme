@@ -140,11 +140,12 @@
             app:layout_constraintTop_toBottomOf="@+id/description_detail"
             app:layout_constraintWidth_default="percent"
             app:layout_constraintWidth_percent=".3" />
+
         <Button
             android:id="@+id/playBeginning"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/btn_selector"
             android:drawableLeft="@drawable/play_selector_icon"
             android:drawablePadding="8dp"
@@ -192,8 +193,6 @@
             android:textAlignment="textStart"
             android:focusableInTouchMode="true"
             android:textAllCaps="false"
-            android:focusedByDefault="true"
-            android:nextFocusDown="@id/more_episodes_serie"
             android:padding="8dp"
             android:text="Adicionar aos favoritos"
             android:textSize="16sp"
@@ -206,11 +205,12 @@
             android:id="@+id/spinner_select_temp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
-            android:background="@drawable/selector_spinner"
             android:layout_marginTop="15dp"
-            app:layout_constraintStart_toStartOf="@+id/guideline_start"
+            android:background="@drawable/selector_spinner"
+            android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
+            android:padding="10dp"
+            android:layout_marginLeft="10dp"
+            app:layout_constraintStart_toEndOf="@+id/spinner_select_ep_number"
             app:layout_constraintTop_toBottomOf="@+id/more_like_this" />
 
 
@@ -221,29 +221,45 @@
             android:background="@drawable/selector_spinner"
             android:drawableEnd="@drawable/baseline_keyboard_arrow_down_24"
             android:padding="10dp"
-            android:layout_marginLeft="10dp"
-            app:layout_constraintStart_toEndOf="@+id/spinner_select_temp"
+            app:layout_constraintStart_toStartOf="@+id/guideline_start"
             app:layout_constraintTop_toTopOf="@+id/spinner_select_temp" />
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/more_episodes_serie"
+<!--        <androidx.fragment.app.FragmentContainerView-->
+<!--            android:id="@+id/more_episodes_serie"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="90dp"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/spinner_select_ep_number"-->
+<!--            app:layout_constraintWidth_default="percent" />-->
+        <HorizontalScrollView
+            android:id="@+id/horizontalScrollViewEpsodes"
             android:layout_width="0dp"
-            android:layout_height="90dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/spinner_select_ep_number"
-            app:layout_constraintWidth_default="percent" />
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/similarMoviesDetaillist"
-            android:layout_width="0dp"
-            android:layout_height="300dp"
-            android:paddingTop="15dp"
-            android:layout_marginTop="15dp"
-            android:focusable="false"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/more_episodes_serie"
-            app:layout_constraintVertical_bias="1.0" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.core.widget.NestedScrollView>
-</layout>
+            app:layout_constraintStart_toStartOf="@+id/guideline_start"
+            app:layout_constraintTop_toBottomOf="@+id/spinner_select_ep_number">
+
+            <GridLayout
+                android:id="@+id/details_episodes_series"
+                android:layout_width="wrap_content"
+                android:layout_height="65dp"
+                android:columnCount="1"
+                android:focusable="false"
+                android:rowCount="1" />
+        </HorizontalScrollView>
+                <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/similarMoviesDetaillist"
+                    android:layout_width="0dp"
+                    android:layout_height="300dp"
+                    android:layout_marginTop="10dp"
+                    android:focusable="false"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/horizontalScrollViewEpsodes"
+                    app:layout_constraintVertical_bias="1.0" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.core.widget.NestedScrollView>
+        </layout>

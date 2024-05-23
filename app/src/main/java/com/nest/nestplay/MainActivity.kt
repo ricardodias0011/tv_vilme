@@ -89,8 +89,12 @@ class MainActivity : FragmentActivity() {
             }
                 task.addOnFailureListener {
                     println(it)
+                    binding.authLoginEnter.setText("Entrar")
+                    Toast.makeText(applicationContext, "Erro de conexão, tente novamente!", Toast.LENGTH_LONG).show()
                 }
-        }
-
+        }.addOnFailureListener {
+                binding.authLoginEnter.setText("Entrar")
+                Toast.makeText(applicationContext, "Erro de conexão, tente novamente!", Toast.LENGTH_LONG).show()
+            }
     }
 }

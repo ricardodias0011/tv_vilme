@@ -1,6 +1,5 @@
 package com.nest.nestplay
 
-import android.Manifest
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -11,9 +10,10 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -35,6 +35,7 @@ class SplashScreenActivity: FragmentActivity() {
     private val STORAGE_PERMISSION_REQUEST_CODE = 123
     private lateinit var binding: ActivitySplashScreenBinding
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,29 +43,37 @@ class SplashScreenActivity: FragmentActivity() {
         setContentView(binding.root)
 
         loadingDialog = Common.loadingDialog(this)
-
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ),
-                STORAGE_PERMISSION_REQUEST_CODE
-            )
-        } else {
-            // Permissões já concedidas, execute o código relacionado ao acesso ao armazenamento externo aqui
+        try{
+            Glide.with(this)
+                .load("https://playnestvilme.s3.us-east-2.amazonaws.com/banner-tv.jpg")
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .into(binding.imageCoverSplash)
+        }catch (e:Exception){
+            println(e)
         }
-
-
+//
+//        if (ContextCompat.checkSelfPermission(
+//                this,
+//                Manifest.permission.READ_EXTERNAL_STORAGE
+//            ) != PackageManager.PERMISSION_GRANTED ||
+//            ContextCompat.checkSelfPermission(
+//                this,
+//                Manifest.permission.WRITE_EXTERNAL_STORAGE
+//            ) != PackageManager.PERMISSION_GRANTED
+//        ) {
+//            ActivityCompat.requestPermissions(
+//                this,
+//                arrayOf(
+//                    Manifest.permission.READ_EXTERNAL_STORAGE,
+//                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+//                ),
+//                STORAGE_PERMISSION_REQUEST_CODE
+//            )
+//        } else {
+//            // Permissões já concedidas, execute o código relacionado ao acesso ao armazenamento externo aqui
+//        }
 
         var today = Date()
         val ntpServerUrl = "http://worldtimeapi.org/api/timezone/America/Sao_Paulo"
@@ -92,7 +101,6 @@ class SplashScreenActivity: FragmentActivity() {
         if (auth.currentUser != null) {
             val db = Firebase.firestore
             val docRef = db.collection("users")
-            binding.textVersionApp.text = "V 1.0.0"
             auth.uid?.let {
                 docRef
                     .document(it)
@@ -128,7 +136,7 @@ class SplashScreenActivity: FragmentActivity() {
                                     val i = Intent(this, HomeActivity::class.java)
                                     startActivity(i)
                                     finish()
-                                }, 1500)
+                                }, 5000)
                             }
                         }
                     }

@@ -16,28 +16,15 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
-import androidx.leanback.widget.ArrayObjectAdapter
-import androidx.leanback.widget.HeaderItem
-import androidx.leanback.widget.ListRow
-import com.airbnb.lottie.LottieAnimationView
 import com.bumptech.glide.Glide
-import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SeekParameters
-import com.google.android.exoplayer2.Timeline
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
+import com.google.android.exoplayer2.ui.DefaultTimeBar
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.DefaultDataSource
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.google.android.exoplayer2.util.MimeTypes
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -50,7 +37,6 @@ import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
-import java.net.URL
 import kotlin.math.ceil
 
 class VideoPlayActivity2: FragmentActivity() {
@@ -60,6 +46,9 @@ class VideoPlayActivity2: FragmentActivity() {
 
     private var movieDate:  MovieModel? = null
     private var sesonMovieId = ""
+
+    private val handlerScreenVerif = Handler(Looper.getMainLooper())
+    private var runnableScreenVerify: Runnable? = null
 
     private lateinit var playerView: PlayerView
     private lateinit var exoPlayer: ExoPlayer
@@ -78,7 +67,7 @@ class VideoPlayActivity2: FragmentActivity() {
     private lateinit var rewindIndicatorView: View
     private lateinit var currentMovie: MovieModel
     private lateinit var mediaItemBuilder: MediaItem.Builder
-
+    private lateinit var timeBar: DefaultTimeBar
     var episodesList = mutableListOf<ListEpisodesModel>()
 
     private lateinit var bottomSettinsg: ConstraintLayout
@@ -112,6 +101,8 @@ class VideoPlayActivity2: FragmentActivity() {
         pauseVideoPlayImage = findViewById(R.id.playimage_video)
         conteinerplayvideoview = findViewById(R.id.playvideo_view)
 
+        timeBar = findViewById(R.id.exo_progress)
+
         btnViewFit = findViewById(R.id.fit_video)
         btnViewFill = findViewById(R.id.fill_video)
         btnViewZoom = findViewById(R.id.zoom_video)
@@ -126,8 +117,7 @@ class VideoPlayActivity2: FragmentActivity() {
         } else {
             intent.getParcelableExtra<MovieModel>("movie")
         }
-
-        sesonMovieId = Common.getIpAddress(this).toString()
+        sesonMovieId = Common.getDeviceInformation(this)
 
         movieDate = data
         playerView.resizeMode = resizeModes[0]
@@ -153,8 +143,10 @@ class VideoPlayActivity2: FragmentActivity() {
             btnViewZoom.isActivated = true
         }
 
+
+
         data?.let {
-            initializePlayer(data)
+//            initializePlayer(data)
             loadMovieInfo(it)
 
             if(data?.listEpsodes != null){
@@ -210,25 +202,34 @@ class VideoPlayActivity2: FragmentActivity() {
                 EpisodesList.visibility = View.GONE
             }
         }
+        runnableScreenVerify = object : Runnable {
+            override fun run() {
+                if(data != null){
+                    updateAndVerifyScreens(false)
+                    handlerScreenVerif.postDelayed(this, 7 * 60 * 1000)
+                }
+            }
+        }
+        handlerScreenVerif.post(runnableScreenVerify!!)
     }
 
     private fun initializePlayer(content: MovieModel?) {
+        println("INICIOU PLAYER")
         try {
             exoPlayer = ExoPlayer.Builder(this).build()
             playerView.player = exoPlayer
                 val mediaItem = MediaItem.fromUri(Uri.parse(content?.url))
-            println(content?.url)
+
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
 
-
+            timeBar.setKeyTimeIncrement(15000)
+            println(playerView.defaultArtwork)
             exoPlayer.addListener(object : Player.Listener {
                 override fun onIsLoadingChanged(isLoading: Boolean) {
 //                    loadingSpinner.visibility = if (isLoading) View.VISIBLE else View.GONE
                 }
-
-
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     loadingSpinner.visibility = when (playbackState) {
@@ -263,6 +264,7 @@ class VideoPlayActivity2: FragmentActivity() {
                         playerView.hideController()
                     }
                 }
+
                 override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                     if (playbackState == Player.STATE_READY && isFirstLoad) {
                         if (isFirstLoad && content?.isTvLink == false) {
@@ -272,10 +274,10 @@ class VideoPlayActivity2: FragmentActivity() {
                                 override fun run() {
                                     val currentPosition = exoPlayer.currentPosition
                                     if(content?.isTvLink == false){
-                                        if(currentPosition > 5000){
+                                        if(currentPosition > 60000){
                                             GeteCurrentTime(currentPosition, content, null)
                                         }
-                                        handler.postDelayed(this, 3 * 60 * 1000)
+                                        handler.postDelayed(this, 5 * 60 * 1000)
                                     }
                                 }
                             }
@@ -283,9 +285,11 @@ class VideoPlayActivity2: FragmentActivity() {
                         }
                     }
                 }
+
             })
         }catch (e: Exception){
             println(e)
+            Common.errorModal(this, "Erro ao reproduzir conteudo", "Não foi possível reproduzir o conteúdo, tente novamente")
         }
 
     }
@@ -430,7 +434,7 @@ class VideoPlayActivity2: FragmentActivity() {
     private fun togglePlayPause() {
         val currentPosition = exoPlayer.currentPosition
         if (exoPlayer.isPlaying) {
-            if(movieDate != null && currentPosition > 30000 && tojumpLong){
+            if(movieDate != null && currentPosition > 60000 && tojumpLong){
                 tojumpLong = false
                 ResetToJumLong()
                 GeteCurrentTime(currentPosition, movieDate!!, null)
@@ -438,11 +442,6 @@ class VideoPlayActivity2: FragmentActivity() {
             pauseVideoPlayImage.visibility = View.VISIBLE
             exoPlayer.pause()
         } else {
-            if(movieDate != null && currentPosition > 30000 && tojumpLong){
-                tojumpLong = false
-                ResetToJumLong()
-                GeteCurrentTime(currentPosition, movieDate!!, null)
-            }
             pauseVideoPlayImage.visibility = View.GONE
             playerView.hideController()
             exoPlayer.play()
@@ -477,22 +476,21 @@ class VideoPlayActivity2: FragmentActivity() {
                 button.layoutParams = params
                 button.setBackgroundResource(R.drawable.btn_selector_keybord)
                 if(episode.ep_number == currentMovie?.current_ep){
-                    button.setTextColor(Color.RED)
+                    button.setBackgroundResource(R.drawable.selected_active_btn)
                 }else{
-                    button.setTextColor(Color.WHITE)
+                    button.setBackgroundResource(R.drawable.btn_selector_keybord)
                 }
                 button.setOnFocusChangeListener() { v, hasFocus ->
                     if(hasFocus){
-                        if(episode.ep_number == currentMovie?.current_ep){
-                            button.setTextColor(Color.RED)
-                        }else{
-                            button.setTextColor(Color.BLACK)
-                        }
+                        button.setBackgroundResource(R.drawable.btn_selector_keybord)
+                        button.setTextColor(Color.BLACK)
                     }else{
                         if(episode.ep_number == currentMovie?.current_ep){
-                            button.setTextColor(Color.RED)
+                            button.setTextColor(Color.WHITE)
+                            button.setBackgroundResource(R.drawable.selected_active_btn)
                         }else{
                             button.setTextColor(Color.WHITE)
+                            button.setBackgroundResource(R.drawable.btn_selector_keybord)
                         }
                     }
                 }
@@ -533,15 +531,12 @@ class VideoPlayActivity2: FragmentActivity() {
                     .addOnSuccessListener{document ->
                         val user = document.toObject(UserModel::class.java)
                         println(user?.currentScreens)
-                        println(sesonMovieId)
 
                         val currentScreens = user?.currentScreens?.filter { it != sesonMovieId } ?: emptyList()
                         val csSize = currentScreens.size
                         val screensAvailables = user?.screensAvailables ?: 0
 
                         var listSeassonDate = mutableListOf<String>()
-                        println(sesonMovieId)
-                        println(currentScreens)
 
                         for (screen in currentScreens){
                             if(sesonMovieId != screen){
@@ -697,26 +692,45 @@ class VideoPlayActivity2: FragmentActivity() {
         transaction.commit()
     }
 
+    override fun onStart() {
+        super.onStart()
+        initializePlayer(movieDate)
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
+        exoPlayer.release()
         isFirstLoad = true
         runnable?.let {
             handler.removeCallbacks(it)
         }
         runnable = null
         tojumpLong = true
-        exoPlayer.release()
+        runnableScreenVerify?.let {
+            handlerScreenVerif.removeCallbacks(it)
+        }
+
+        runnableScreenVerify = null
     }
     override fun onStop() {
         super.onStop()
+        if(tojumpLong && exoPlayer.currentPosition > 60000){
+            GeteCurrentTime(exoPlayer.currentPosition, movieDate!!, null)
+        }
+        exoPlayer.release()
         isFirstLoad = true
-
         runnable?.let {
             handler.removeCallbacks(it)
         }
         runnable = null
         tojumpLong = true
-        exoPlayer.release()
+        runnableScreenVerify?.let {
+            handlerScreenVerif.removeCallbacks(it)
+        }
+
+        runnableScreenVerify = null
+        updateAndVerifyScreens(true)
     }
 
 }

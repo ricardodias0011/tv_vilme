@@ -8,29 +8,49 @@
     android:background="#000000"
     tools:context=".SplashScreenActivity">
 
+<!--    <ImageView-->
+<!--        android:id="@+id/imageView"-->
+<!--        android:layout_width="222dp"-->
+<!--        android:layout_height="213dp"-->
+<!--        android:layout_gravity="center"-->
+<!--        android:src="@drawable/logogc"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toTopOf="parent" />-->
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="222dp"
-        android:layout_height="213dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:src="@drawable/splash_anim"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_splash"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/text_version_app"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:textAlignment="center"
-        android:drawablePadding="16dp"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:text=""
-        android:textSize="8dp"
-        android:textColor="@color/color_white"
+    <ImageView
+        android:id="@+id/imageCoverSplash"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:scaleType="centerCrop"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+        app:layout_constraintTop_toTopOf="parent" />
+<!--    <TextView-->
+<!--        android:id="@+id/text_version_app"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="56dp"-->
+<!--        android:textAlignment="center"-->
+<!--        android:drawablePadding="16dp"-->
+<!--        android:focusable="true"-->
+<!--        android:focusableInTouchMode="true"-->
+<!--        android:text="V 1.0.1"-->
+<!--        android:textSize="8dp"-->
+<!--        android:textColor="@color/color_white"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/imageView" />-->
 </androidx.constraintlayout.widget.ConstraintLayout>

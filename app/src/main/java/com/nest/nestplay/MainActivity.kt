@@ -76,7 +76,7 @@ class MainActivity : FragmentActivity() {
                                     finish()
                                 } else{
                                     val i = Intent(this, HomeActivity::class.java)
-                                    i.putExtra("data_extra", "data bem legal")
+                                    i.putExtra("data_extra", "")
                                     startActivity(i)
                                     finish()
                                 }
@@ -90,7 +90,6 @@ class MainActivity : FragmentActivity() {
                 task.addOnFailureListener {
                     println(it)
                     binding.authLoginEnter.setText("Entrar")
-                    Toast.makeText(applicationContext, "Erro de conexão, tente novamente!", Toast.LENGTH_LONG).show()
                 }
         }.addOnFailureListener {
                 binding.authLoginEnter.setText("Entrar")

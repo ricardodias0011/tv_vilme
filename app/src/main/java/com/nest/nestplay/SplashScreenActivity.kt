@@ -3,7 +3,6 @@ package com.nest.nestplay
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -53,30 +52,9 @@ class SplashScreenActivity: FragmentActivity() {
         }catch (e:Exception){
             println(e)
         }
-//
-//        if (ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.READ_EXTERNAL_STORAGE
-//            ) != PackageManager.PERMISSION_GRANTED ||
-//            ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE
-//            ) != PackageManager.PERMISSION_GRANTED
-//        ) {
-//            ActivityCompat.requestPermissions(
-//                this,
-//                arrayOf(
-//                    Manifest.permission.READ_EXTERNAL_STORAGE,
-//                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-//                ),
-//                STORAGE_PERMISSION_REQUEST_CODE
-//            )
-//        } else {
-//            // Permissões já concedidas, execute o código relacionado ao acesso ao armazenamento externo aqui
-//        }
 
         var today = Date()
-        val ntpServerUrl = "http://worldtimeapi.org/api/timezone/America/Sao_Paulo"
+        val ntpServerUrl = "https://worldtimeapi.org/api/timezone/America/Sao_Paulo"
 
         try {
             val url = URL(ntpServerUrl)
@@ -87,7 +65,9 @@ class SplashScreenActivity: FragmentActivity() {
                 val textResponse = inputStream.bufferedReader().use { it.readText() }
                 val currentTimeJson = textResponse
                 val currentTime = parseDateTimeFromJson(currentTimeJson)
-                today = currentTime
+                if(currentTime != null){
+                    today = currentTime
+                }
                 verifyUser(currentTime)
             }
         } catch (e: Exception) {
@@ -106,42 +86,47 @@ class SplashScreenActivity: FragmentActivity() {
                     .document(it)
                     .get()
                     .addOnSuccessListener { document ->
-                        val user = document.toObject(UserModel::class.java)
-                        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
-                        val editor = sharedPreferences.edit()
-                        val gson = Gson()
-                        val userJson = gson.toJson(document.toObject(UserModel::class.java))
-                        if (userJson != null) {
-                            val userJsonMap = gson.fromJson(userJson, Map::class.java) as MutableMap<String, Any>
-                            userJsonMap["id"] = document.id
-                            val modifiedUserJson = gson.toJson(userJsonMap)
-                            editor.putString("user", modifiedUserJson)
-                            editor.apply()
-                        }
-                        val expirePlanDate = user?.expirePlanDate?.toDate()
-                        val timeZone = TimeZone.getTimeZone("America/Sao_Paulo")
-                        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                        sdf.timeZone = timeZone
-                        val expirePlanDateString = sdf.format(expirePlanDate)
-                        val todayString = sdf.format(today)
+                        try{
+                            val user = document.toObject(UserModel::class.java)
+                            val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                            val editor = sharedPreferences.edit()
+                            val gson = Gson()
+                            val userJson = gson.toJson(document.toObject(UserModel::class.java))
+                            if (userJson != null) {
+                                val userJsonMap = gson.fromJson(userJson, Map::class.java) as MutableMap<String, Any>
+                                userJsonMap["id"] = document.id
+                                val modifiedUserJson = gson.toJson(userJsonMap)
+                                editor.putString("user", modifiedUserJson)
+                                editor.apply()
+                            }
+                            val expirePlanDate = user?.expirePlanDate?.toDate()
 
-                        if (expirePlanDate != null) {
-                            if (user != null && expirePlanDateString < todayString) {
-                                val i = Intent(this, PaymentRequiredActivity::class.java)
-                                i.putExtra("user", user)
-                                startActivity(i)
-                                finish()
-                            } else{
-                                Handler(Looper.getMainLooper()).postDelayed({
-                                    val i = Intent(this, HomeActivity::class.java)
+                            if (expirePlanDate != null) {
+                                val timeZone = TimeZone.getTimeZone("America/Sao_Paulo")
+                                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                sdf.timeZone = timeZone
+                                val expirePlanDateString = sdf.format(expirePlanDate)
+                                val todayString = sdf.format(today)
+
+                                if (user != null && expirePlanDateString < todayString) {
+                                    val i = Intent(this, PaymentRequiredActivity::class.java)
+                                    i.putExtra("user", user)
                                     startActivity(i)
                                     finish()
-                                }, 5000)
+                                } else{
+                                    Handler(Looper.getMainLooper()).postDelayed({
+                                        val i = Intent(this, HomeActivity::class.java)
+                                        startActivity(i)
+                                        finish()
+                                    }, 5000)
+                                }
                             }
+                        }catch (e:Exception){
                         }
+
                     }
                     .addOnFailureListener {
-                        Toast.makeText(this, "Erro", Toast.LENGTH_LONG)
+                        Toast.makeText(this, "", Toast.LENGTH_LONG).show()
                     }
             }
 
@@ -158,23 +143,9 @@ class SplashScreenActivity: FragmentActivity() {
 
     fun parseDateTimeFromJson(json: String): Date {
         val jsonObject = JSONObject(json)
-        val dateTimeString = jsonObject.getString("datetime")
+        val dateTimeString = jsonObject.getString("utc_datetime")
 
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         return sdf.parse(dateTimeString) ?: Date()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            } else {
-           }
-        }
     }
 }

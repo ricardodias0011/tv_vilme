@@ -20,6 +20,7 @@ import com.google.gson.Gson
 import com.nest.nestplay.databinding.ActivitySplashScreenBinding
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
+import com.nest.nestplay.utils.Constants
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -29,6 +30,10 @@ import java.util.Locale
 import java.util.TimeZone
 
 class SplashScreenActivity: FragmentActivity() {
+    init {
+        System.loadLibrary("api-keys")
+    }
+    external fun getKeys() : String
     lateinit var loadingDialog: Dialog
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
     private val STORAGE_PERMISSION_REQUEST_CODE = 123
@@ -40,6 +45,9 @@ class SplashScreenActivity: FragmentActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
+        Constants.KEY_D = getKeys()
 
         loadingDialog = Common.loadingDialog(this)
         try{

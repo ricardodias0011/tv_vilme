@@ -4,7 +4,6 @@ plugins {
     id("com.google.gms.google-services")
     id("kotlin-parcelize")
 }
-
 android {
     signingConfigs {
         create("release") {
@@ -20,7 +19,11 @@ android {
         versionCode = 1
         versionName = "1.0"
         signingConfig = signingConfigs.getByName("release")
-
+        externalNativeBuild {
+            ndkBuild {
+                cppFlags += ""
+            }
+        }
     }
 
     buildTypes {
@@ -47,7 +50,13 @@ android {
     viewBinding {
         enable = true
     }
+    externalNativeBuild {
+        ndkBuild {
+            path = file("src/main/jni/Android.mk")
+        }
+    }
 }
+
 
 dependencies {
     implementation("com.airbnb.android:lottie:6.4.0")

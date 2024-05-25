@@ -21,7 +21,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import com.bumptech.glide.Glide
 import com.google.firebase.Firebase
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
@@ -34,6 +33,7 @@ import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.player.VideoPlayActivity2
 import com.nest.nestplay.utils.Common
+import com.nest.nestplay.utils.Constants
 import java.util.Date
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -119,20 +119,20 @@ class DetailMovieActivity: FragmentActivity() {
             wasEncrypted = false
         }
         if(lastEpisode != null && detailsResponse?.contentType == "Serie"){
-            detailsResponse?.url = decrypt(lastEpisode!!.url)
+            detailsResponse?.url = decrypt(lastEpisode!!.url, Constants.KEY_D)
             detailsResponse?.current_ep = lastEpisode!!.ep_number
             detailsResponse?.idEpsode = lastEpisode!!.idEpsode
             detailsResponse?.listEpsodes = episodesList
             detailsResponse?.season = lastEpisode?.season
         }else {
             if(detailsResponse?.url != null){
-                detailsResponse?.url =  decrypt(detailsResponse!!.url)
+                detailsResponse?.url =  decrypt(detailsResponse!!.url, Constants.KEY_D)
             }
         }
         if(beginning === true || (lastEpisode == null && detailsResponse?.contentType == "Serie")){
             if(detailsResponse?.contentType == "Serie"){
                 wasEncrypted = false
-                detailsResponse?.url = decrypt(firstEpisode!!.url)
+                detailsResponse?.url = decrypt(firstEpisode!!.url, Constants.KEY_D)
                 detailsResponse?.current_ep = firstEpisode!!.ep_number
                 detailsResponse?.idEpsode = firstEpisode!!.idEpsode
                 detailsResponse?.season = firstEpisode?.season
@@ -169,7 +169,7 @@ class DetailMovieActivity: FragmentActivity() {
         }
         return data
     }
-    fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
+    fun decrypt(msg: String, password: String): String {
         var urlDecodeString = ""
         if(wasEncrypted == false){
             try {
@@ -281,6 +281,7 @@ class DetailMovieActivity: FragmentActivity() {
 
 
     private fun GetEpsodeos(id_movie: Int, seasseon: Number?){
+        loadingDialog.show()
         episodesList.clear()
 //        EpisodesListFragment.clearAll()
         val db =  Firebase.firestore
@@ -304,12 +305,14 @@ class DetailMovieActivity: FragmentActivity() {
                         episodesList.add(epsode)
                     }
                 }
+                loadingDialog.hide()
 
                 renderEpides(episodesList)
 
                 getEpsodesListForCount(documents.count())
             }
             .addOnFailureListener {
+                loadingDialog.hide()
                 binding.horizontalScrollViewEpsodes.visibility = View.GONE
                 binding.similarMoviesDetaillist.setPadding(0, 0, 0, 0)
                 if(it.message == Common.msgPermissionDENIED){
@@ -333,7 +336,7 @@ class DetailMovieActivity: FragmentActivity() {
             }
             button.layoutParams = params
             button.setBackgroundResource(R.drawable.btn_selector_keybord)
-            if(episode.ep_number == lastEpisode?.ep_number){
+            if(episode.ep_number == lastEpisode?.ep_number && episode.season == lastEpisode?.season){
                 button.setBackgroundResource(R.drawable.selected_active_btn)
             }else{
                 button.setBackgroundResource(R.drawable.btn_selector_keybord)
@@ -343,7 +346,7 @@ class DetailMovieActivity: FragmentActivity() {
                     button.setBackgroundResource(R.drawable.btn_selector_keybord)
                     button.setTextColor(Color.BLACK)
                 }else{
-                    if(episode.ep_number == lastEpisode?.ep_number){
+                    if(episode.ep_number == lastEpisode?.ep_number && episode.season == lastEpisode?.season){
                         button.setTextColor(Color.WHITE)
                         button.setBackgroundResource(R.drawable.selected_active_btn)
                     }else{
@@ -359,7 +362,7 @@ class DetailMovieActivity: FragmentActivity() {
 
                 val intent = Intent(this, VideoPlayActivity2::class.java)
                 wasEncrypted = false
-                detailsResponse?.url = decrypt(epsode.url)
+                detailsResponse?.url = decrypt(epsode.url, Constants.KEY_D)
                 detailsResponse?.current_ep = epsode?.ep_number
                 detailsResponse?.season = epsode?.season
                 detailsResponse?.urls_subtitle = epsode?.urls_subtitle
@@ -492,14 +495,10 @@ class DetailMovieActivity: FragmentActivity() {
                                     val firstDocument = documents.firstOrNull()
                                     val getLastEpsode =  firstDocument?.toObject(ListEpisodesModel::class.java)
                                     if (getLastEpsode != null) {
-                                        println("GeteCurrentTime TESTE ${getLastEpsode.ep_number}")
-                                    }
-
-                                    if (getLastEpsode != null) {
                                         try {
                                             val EpisodesLists = findViewById<GridLayout>(R.id.details_episodes_series)
                                             if(lastEpisode != null){
-                                                val idbtn2 = lastEpisode!!.ep_number + lastEpisode!!.season * 1000  // Correspondendo ao valor da tag
+                                                val idbtn2 = lastEpisode!!.ep_number + lastEpisode!!.season * 1000
                                                 for (i in 0 until EpisodesLists?.childCount!!) {
                                                     val button = EpisodesLists.getChildAt(i) as Button
                                                     if (button.id == idbtn2) {
@@ -535,6 +534,9 @@ class DetailMovieActivity: FragmentActivity() {
                     }
                 }
                 .addOnFailureListener {
+                    if(it.message == Common.msgPermissionDENIED){
+                        accessDenied()
+                    }
                 }
 
         }
@@ -567,7 +569,7 @@ class DetailMovieActivity: FragmentActivity() {
                         val newItem = hashMapOf(
                             "user_id" to user.uid,
                             "content_id" to movieId.toInt(),
-                            "createdAt" to Timestamp.now()
+                            "createdAt" to Date()
                         )
                         docRef
                             .add(newItem)
@@ -659,7 +661,7 @@ class DetailMovieActivity: FragmentActivity() {
         if(detailsResponse?.contentType == "Serie"){
             Handler(Looper.getMainLooper()).postDelayed({
                 GeteCurrentTime(detailsResponse!!)
-            }, 2000)
+            }, 1000)
         }
     }
 }

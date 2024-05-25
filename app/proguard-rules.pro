@@ -1,7 +1,3 @@
--keep public class * {
-    public protected *;
-}
-
 -keep class java.sql.Timestamp {
     *;
 }
@@ -9,7 +5,6 @@
 -keep class java.time.** {
     *;
 }
--keep class com.nest.nestplay.model.** { *; }
 
 -keep class com.google.android.exoplayer2.** { *; }
 -keep class com.google.gson.** { *; }
@@ -17,20 +12,17 @@
 
 -keep class com.google.firebase.firestore.** { *; }
 -keep class com.google.firebase.Timestamp { *; }
--keepnames @com.google.firebase.firestore.PropertyName class *
--keepnames @com.google.firebase.firestore.Exclude class *
--keepnames @com.google.firebase.firestore.IgnoreExtraProperties class *
-
--keepclassmembers class * {
-    @com.google.firebase.firestore.PropertyName <fields>;
-    @com.google.firebase.firestore.PropertyName <methods>;
-}
-
--keepclassmembers class * {
-    @com.google.firebase.firestore.ServerTimestamp <methods>;
-}
-
--keep class com.google.firebase.** { *; }
+-keep class com.nest.nestplay.model.UserModel { *; }
+-keep class com.nest.nestplay.model.FavsMovie { *; }
+-keep class com.nest.nestplay.model.ListEpisodesModel { *; }
+-keep class com.nest.nestplay.model.ChannelTVModel { *; }
+-keep class com.nest.nestplay.model.MovieModel { *; }
+-keep class com.nest.nestplay.model.TimeModel { *; }
+-keep class com.nest.nestplay.model.ListMovieModel { *; }
+-keep class com.nest.nestplay.model.ListMovieModel$Movie { *; }
+-keep class com.nest.nestplay.model.LinksTvModel { *; }
+-keep class com.nest.nestplay.model.ListTvModel { *; }
+-keep class com.nest.nestplay.model.ListChannelTVModel { *; }
 
 -dontwarn afu.org.checkerframework.dataflow.qual.Pure
 -dontwarn afu.org.checkerframework.dataflow.qual.SideEffectFree

@@ -47,7 +47,7 @@ class Common {
             }
             return data
         }
-        fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
+        fun decrypt(msg: String, password: String = Constants.KEY_D): String {
             var urlDecodeString = ""
                 try {
                     val key32Char = hexStringToByteArray(password)

@@ -19,7 +19,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.leanback.widget.BrowseFrameLayout
 import com.bumptech.glide.Glide
 import com.google.firebase.Firebase
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.Query
@@ -36,6 +35,7 @@ import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.model.parseM3uPlaylist
+import com.nest.nestplay.player.VideoPlayActivity2
 import com.nest.nestplay.service.ApiClient
 import com.nest.nestplay.utils.Common
 import com.nest.nestplay.utils.Constants
@@ -168,7 +168,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         MoviesListFragment.setOnItemTvOnlineClickListener { tv ->
             println(tv)
             if(tv is ChannelTVModel){
-                val intent = Intent(this, VideoPlayActivity::class.java)
+                val intent = Intent(this, VideoPlayActivity2::class.java)
                 intent.putExtra("movie", createMovieModelFromTvItem(tv))
                 startActivity(intent)
             }else{
@@ -195,6 +195,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
         ChangeTextCatogy("Início")
         onGetCategorys("Home", true)
+
         val onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
             if (hasFocus) {
                 if (!SIDE_MENU) {
@@ -544,6 +545,9 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
     private fun GetRecentsWatchList() {
         loadingDialog.show()
+        try{
+
+
         val currentUser = Firebase.auth.currentUser
         val db = Firebase.firestore
         val docRef = db.collection("content_watch")
@@ -556,12 +560,12 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 .get()
                 .addOnSuccessListener { documents ->
                     val movieList = mutableListOf<Int>()
-                    val movieListDate = mutableListOf<Timestamp>()
+                    val movieListDate = mutableListOf<Date>()
                     for (document in documents){
                         if(document != null){
                             val time = document.toObject(TimeModel::class.java)
                             time?.content_id?.let { movieList.add(it) }
-                            time?.updatedAt?.let { movieListDate.add(it) }
+                            time?.updatedAt?.let { movieListDate.add(it.toDate()) }
                         }
                     }
                     if(movieList.isEmpty()){
@@ -576,8 +580,12 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     }
                 }
         }
+        }
+        catch (e: Exception){
+                Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
+        }
     }
-    private fun GetRecentsWatchMovies(list: List<Int>, dates: List<Timestamp>) {
+    private fun GetRecentsWatchMovies(list: List<Int>, dates: List<Date>) {
         clearList()
         loadingDialog.show()
         var query = fetchMoviesAndUpdateList()
@@ -601,7 +609,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 movieDatePairs.sortByDescending { movie ->
                     val index = list.indexOf(movie.id)
                     if (index != -1 && index < dates.size) {
-                        dates[index].toDate()
+                        dates[index]
                     } else {
                         Date(0)
                     }
@@ -983,7 +991,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     }
 
 
-    fun decrypt(msg: String, password: String = "770E75DC61635CCC61A1D7D8FFF9D1B0"): String {
+    fun decrypt(msg: String, password: String = Constants.KEY_D): String {
         var decripeted = ""
             try {
                 val key32Char = hexStringToByteArray(password)

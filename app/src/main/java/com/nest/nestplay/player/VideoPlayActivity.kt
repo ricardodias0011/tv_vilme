@@ -1,5 +1,7 @@
 package com.nest.nestplay.player
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -29,6 +31,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.google.gson.Gson
+import com.nest.nestplay.PaymentRequiredActivity
 import com.nest.nestplay.R
 import com.nest.nestplay.fragments.ListEpisodesFragment
 import com.nest.nestplay.model.Genres
@@ -143,6 +147,10 @@ class VideoPlayActivity2: FragmentActivity() {
             btnViewZoom.isActivated = true
         }
 
+        if(movieDate?.isTvLink == true){
+            conteinerplayvideoview.visibility = View.GONE
+        }
+
 
 
         data?.let {
@@ -152,6 +160,7 @@ class VideoPlayActivity2: FragmentActivity() {
             if(data?.listEpsodes != null){
                 episodesList = data.listEpsodes!!
                 playerView.hideController()
+
                 val totalepInSeason =  movieDate?.listEpsodes!!.size
                 var total_items_separetes = 0
                 if (totalepInSeason > 0) {
@@ -214,7 +223,9 @@ class VideoPlayActivity2: FragmentActivity() {
     }
 
     private fun initializePlayer(content: MovieModel?) {
-        println("INICIOU PLAYER")
+        if(movieDate?.isTvLink == true){
+            conteinerplayvideoview.visibility = View.GONE
+        }
         try {
             exoPlayer = ExoPlayer.Builder(this).build()
             playerView.player = exoPlayer
@@ -224,8 +235,7 @@ class VideoPlayActivity2: FragmentActivity() {
                 exoPlayer.prepare()
                 exoPlayer.playWhenReady = true
 
-            timeBar.setKeyTimeIncrement(15000)
-            println(playerView.defaultArtwork)
+            timeBar.setKeyTimeIncrement(25000)
             exoPlayer.addListener(object : Player.Listener {
                 override fun onIsLoadingChanged(isLoading: Boolean) {
 //                    loadingSpinner.visibility = if (isLoading) View.VISIBLE else View.GONE
@@ -294,6 +304,15 @@ class VideoPlayActivity2: FragmentActivity() {
 
     }
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if(movieDate?.isTvLink == true){
+            when (keyCode) {
+                KeyEvent.KEYCODE_BACK -> {
+                    super.onKeyUp(keyCode, event)
+                }
+            }
+            playerView.hideController()
+            return true
+        }
         val currentPosition = exoPlayer.currentPosition
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
@@ -572,9 +591,37 @@ class VideoPlayActivity2: FragmentActivity() {
                             }
                         }
                     }
+                    .addOnFailureListener {
+                        if(it.message == Common.msgPermissionDENIED){
+                            accessDenied()
+                        }
+                    }
 
             }
         }
+    }
+
+    fun navigateFromAccessDenied(user: UserModel) {
+        val i = Intent(this, PaymentRequiredActivity::class.java)
+        i.putExtra("user", user)
+        startActivity(i)
+        finish()
+    }
+
+    fun accessDenied () {
+        val user = getCurrentUser()
+        if(user != null){
+            navigateFromAccessDenied(user)
+        }
+    }
+
+    fun getCurrentUser(): UserModel? {
+        val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val userJson = sharedPreferences.getString("user", null)
+        val user = gson.fromJson(userJson, UserModel::class.java)
+
+        return user
     }
 
     fun ResetToJumLong() {
@@ -596,6 +643,11 @@ class VideoPlayActivity2: FragmentActivity() {
     }
 
     fun GeteCurrentTime(time: Long?, movie: MovieModel, only_get: Boolean?){
+
+        if(movieDate?.isTvLink == true){
+            return
+        }
+
         val db = Firebase.firestore
         val currentUser = Firebase.auth.currentUser
 
@@ -634,6 +686,9 @@ class VideoPlayActivity2: FragmentActivity() {
                 }
                 .addOnFailureListener {
                     updateCurrentTime(user.uid, movie, time, null)
+                    if(it.message == Common.msgPermissionDENIED){
+                        accessDenied()
+                    }
                 }
         }
     }
@@ -682,6 +737,9 @@ class VideoPlayActivity2: FragmentActivity() {
                 }
                 .addOnFailureListener { exception ->
                     println("Erro ao adicionar novo item. Exceção: $exception")
+                    if(exception.message == Common.msgPermissionDENIED){
+                        accessDenied()
+                    }
                 }
         }
     }
@@ -712,6 +770,7 @@ class VideoPlayActivity2: FragmentActivity() {
         }
 
         runnableScreenVerify = null
+        conteinerplayvideoview.visibility = View.VISIBLE
     }
     override fun onStop() {
         super.onStop()

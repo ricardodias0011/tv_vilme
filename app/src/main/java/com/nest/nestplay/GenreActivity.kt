@@ -47,7 +47,6 @@ class GenreActivity : FragmentActivity() {
         initIdGenry = intent.getIntExtra("id", 0)
 
         loadingDialog = Common.loadingDialog(this)
-        loadingDialog.show()
         binding.btnSearchGenre.setOnClickListener {
             val intent = Intent(this, SearchMovie::class.java)
             startActivity(intent)
@@ -61,7 +60,6 @@ class GenreActivity : FragmentActivity() {
         adpterMovie.onLastItemFocusChangeListener  = object : MoviesListAdpter.OnLastItemFocusChangeListener {
             override fun onLastItemFocused(movie: ListMovieModel.Movie) {
                 if(lastVisibleGet == true){
-                    println("Vamo é aki")
                     GetMovieListFavs(idGenreSelected, false)
                 }
             }
@@ -78,22 +76,29 @@ class GenreActivity : FragmentActivity() {
             override fun onItemClicked(item: Genre) {
                 lastVisibleGet = true
                 lastVisible = null
-                GetMovieListFavs(item.id, true)
+                GetMovieListFavs(item.id, true, true)
                 idGenreSelected = item.id
             }
         }
         val genreId = initIdGenry ?: 0
         idGenreSelected = genreId
-        GetMovieListFavs(genreId, true)
+        GetMovieListFavs(genreId, true, true)
     }
 
-    private fun GetMovieListFavs(gere: Int, clear: Boolean?) {
-
-        var customId = false
-
+    private fun GetMovieListFavs(gere: Int, clear: Boolean?, first: Boolean = false) {
+        println(gere)
         if (clear == true) {
             listMovies.clear()
         }
+
+        if(listMovies.count() < 15 && !first){
+            return
+        }
+
+        loadingDialog.show()
+        var customId = false
+
+
 
         var query = fetchMoviesList().limit(15)
         if (gere == 7) {
@@ -140,8 +145,6 @@ class GenreActivity : FragmentActivity() {
                     if (clear == true) {
                         listMovies.clear()
                     }
-                println("Ta vazio: ${querySnapshots.isEmpty}")
-
                     if (!querySnapshots.isEmpty) {
                         lastVisible = querySnapshots.documents[querySnapshots.size() - 1].toObject(ListMovieModel.Movie::class.java)?.popularity
                     }else{

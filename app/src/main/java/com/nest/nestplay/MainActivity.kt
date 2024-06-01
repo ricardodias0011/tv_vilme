@@ -3,10 +3,13 @@ package com.nest.nestplay
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
@@ -20,6 +23,11 @@ import java.util.TimeZone
 class MainActivity : FragmentActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var auth: FirebaseAuth
+
+    private var loading: Boolean = false
+
+    private var failedAttempts = 0
+    private lateinit var countdownTimer: CountDownTimer
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -34,28 +42,36 @@ class MainActivity : FragmentActivity() {
         binding.authLoginEnter.setOnClickListener {
             val email = binding.authLoginEmail.text.toString().trim()
             val password = binding.authLoginPassword.text.toString().trim()
-            if(!email.isEmpty() && !password.isEmpty()){
-                AuthLoginWithEmailAndPassword(email, password, date)
-            }else{
-                Toast.makeText(applicationContext, "Preencha todos os campos", Toast.LENGTH_LONG).show()
+            if (!email.isEmpty() && !password.isEmpty()) {
+                if (loading == false) {
+                    AuthLoginWithEmailAndPassword(email, password, date)
+                }
+            } else {
+                Toast.makeText(applicationContext, "Preencha todos os campos", Toast.LENGTH_LONG)
+                    .show()
             }
         }
     }
 
     private fun AuthLoginWithEmailAndPassword(email: String, password: String, today: Date) {
         binding.authLoginEnter.setText("Carregando...")
-        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener{task ->
-            if(task.isSuccessful){
+        loading = true
+        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
                 val db = Firebase.firestore
                 val docRef = db.collection("users")
                 task.result.user?.uid?.let {
                     docRef
                         .document(it)
                         .get()
-                        .addOnSuccessListener {document ->
+                        .addOnSuccessListener { document ->
+                            failedAttempts = 0
                             val user = document.toObject(UserModel::class.java)
                             println(user)
-                            val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                            val sharedPreferences = applicationContext.getSharedPreferences(
+                                "MyPrefs",
+                                Context.MODE_PRIVATE
+                            )
                             val editor = sharedPreferences.edit()
                             val gson = Gson()
                             val userJson = gson.toJson(document.toObject(UserModel::class.java))
@@ -74,7 +90,7 @@ class MainActivity : FragmentActivity() {
                                     i.putExtra("user", user)
                                     startActivity(i)
                                     finish()
-                                } else{
+                                } else {
                                     val i = Intent(this, HomeActivity::class.java)
                                     i.putExtra("data_extra", "")
                                     startActivity(i)
@@ -83,17 +99,52 @@ class MainActivity : FragmentActivity() {
                             }
                         }
                 }
-            }else {
+                loading = false
+            } else {
                 binding.authLoginEnter.setText("Entrar")
-                Toast.makeText(applicationContext, "Email ou senha invalídos", Toast.LENGTH_LONG).show()
+                loading = false
             }
-                task.addOnFailureListener {
-                    println(it)
-                    binding.authLoginEnter.setText("Entrar")
-                }
         }.addOnFailureListener {
-                binding.authLoginEnter.setText("Entrar")
-                Toast.makeText(applicationContext, "Erro de conexão, tente novamente!", Toast.LENGTH_LONG).show()
+            failedAttempts++
+            loading = false
+            binding.authLoginEnter.setText("Entrar")
+            if (failedAttempts > 3) {
+                lockLoginButton()
             }
+            when (it) {
+                is FirebaseAuthInvalidCredentialsException -> {
+                    Toast.makeText(this, "Email ou senha incorretos.", Toast.LENGTH_LONG).show()
+                }
+
+                is FirebaseTooManyRequestsException -> {
+                    Toast.makeText(
+                        this,
+                        "Muitas tentativas de login. Tente novamente mais tarde.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                else -> {
+                    Toast.makeText(this, "Erro de autenticação:  ${it.message}", Toast.LENGTH_LONG)
+                        .show()
+                }
+            }
+        }
+    }
+
+    fun lockLoginButton() {
+        binding.authLoginEnter.isEnabled = false
+        countdownTimer = object : CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                binding.authLoginEnter.text =
+                    "Tente novamente em ${millisUntilFinished / 1000} segundos"
+            }
+
+            override fun onFinish() {
+                binding.authLoginEnter.isEnabled = true
+                binding.authLoginEnter.text = "Entrar"
+            }
+        }.start()
+
     }
 }

@@ -6,8 +6,10 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.view.KeyEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -21,9 +23,13 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
+import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.ui.DefaultTimeBar
 import com.google.android.exoplayer2.ui.PlayerView
@@ -41,9 +47,16 @@ import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
+import com.nest.nestplay.utils.Constants
 import kotlin.math.ceil
 
 class VideoPlayActivity2: FragmentActivity() {
+
+    init {
+        System.loadLibrary("api-keys")
+    }
+    external fun getKeys() : String
+
     private val handler = Handler(Looper.getMainLooper())
 
     private var runnable: Runnable? = null
@@ -77,6 +90,17 @@ class VideoPlayActivity2: FragmentActivity() {
     private lateinit var bottomSettinsg: ConstraintLayout
     var isVisiblebottomSettinsg = false
 
+    var playVisible = false
+
+    private lateinit var trackSelector: DefaultTrackSelector
+
+    private lateinit var conteinerSkipEp: ConstraintLayout
+    private var conteinerSkipEpVisible = false
+    private lateinit var btnSkipEp: Button
+    private lateinit var btnRewindEp: Button
+
+    private lateinit var wakeLock: PowerManager.WakeLock
+
 
     private var isFirstLoad = true
     private var tojumpLong = true
@@ -96,6 +120,8 @@ class VideoPlayActivity2: FragmentActivity() {
         setContentView(R.layout.activity_video_play)
 
 
+        Constants.KEY_D = getKeys()
+
         videoSubtitle = findViewById(R.id.video_subtitle)
         videoTitle = findViewById(R.id.video_title)
         videoCover = findViewById(R.id.video_cover)
@@ -105,6 +131,10 @@ class VideoPlayActivity2: FragmentActivity() {
         pauseVideoPlayImage = findViewById(R.id.playimage_video)
         conteinerplayvideoview = findViewById(R.id.playvideo_view)
 
+        conteinerSkipEp = findViewById(R.id.container_btn_skip)
+        btnSkipEp = findViewById(R.id.skip_video_ep)
+        btnRewindEp = findViewById(R.id.rewind_video_ep)
+
         timeBar = findViewById(R.id.exo_progress)
 
         btnViewFit = findViewById(R.id.fit_video)
@@ -113,15 +143,16 @@ class VideoPlayActivity2: FragmentActivity() {
 
         fastForwardIndicatorView = findViewById(R.id.fast_forward_indicator)
         rewindIndicatorView = findViewById(R.id.rewind_indicator)
-        updateAndVerifyScreens(false)
         val separateItemsEpsides = findViewById<GridLayout>(R.id.video_episodes_separete_series)
+        sesonMovieId = Common.getDeviceInformation(this)
+        updateAndVerifyScreens(false)
+        playerView.keepScreenOn = true
 
         val data = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra("movie", MovieModel::class.java )
         } else {
             intent.getParcelableExtra<MovieModel>("movie")
         }
-        sesonMovieId = Common.getDeviceInformation(this)
 
         movieDate = data
         playerView.resizeMode = resizeModes[0]
@@ -149,9 +180,8 @@ class VideoPlayActivity2: FragmentActivity() {
 
         if(movieDate?.isTvLink == true){
             conteinerplayvideoview.visibility = View.GONE
+            playVisible = false
         }
-
-
 
         data?.let {
 //            initializePlayer(data)
@@ -220,14 +250,36 @@ class VideoPlayActivity2: FragmentActivity() {
             }
         }
         handlerScreenVerif.post(runnableScreenVerify!!)
+
+        btnSkipEp.setOnClickListener {
+            if(movieDate?.contentType == "Serie"){
+                hideEpisodesChange()
+                SkipNextEp()
+            }
+        }
+        btnRewindEp.setOnClickListener {
+            if(movieDate?.contentType == "Serie"){
+                hideEpisodesChange()
+                RewindEp()
+            }
+        }
     }
 
     private fun initializePlayer(content: MovieModel?) {
         if(movieDate?.isTvLink == true){
             conteinerplayvideoview.visibility = View.GONE
+            playVisible = false
         }
+
+        trackSelector = DefaultTrackSelector(applicationContext)
+
+        val  isMkvFile = content?.url?.contains(".mkv")
+
         try {
-            exoPlayer = ExoPlayer.Builder(this).build()
+            exoPlayer = ExoPlayer.Builder(this)
+                .setTrackSelector(trackSelector)
+                .build()
+
             playerView.player = exoPlayer
                 val mediaItem = MediaItem.fromUri(Uri.parse(content?.url))
 
@@ -242,42 +294,45 @@ class VideoPlayActivity2: FragmentActivity() {
                 }
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
-                    loadingSpinner.visibility = when (playbackState) {
-                        Player.STATE_BUFFERING -> View.VISIBLE
-                        Player.STATE_READY, Player.STATE_ENDED -> View.GONE
-                        else -> loadingSpinner.visibility
+                    val handlerVisbleLoading = Handler(Looper.getMainLooper())
+                    val runnableplayVisibleLoading = Runnable {
+                        loadingSpinner.visibility = when (playbackState) {
+                            Player.STATE_BUFFERING -> View.VISIBLE
+                            Player.STATE_READY, Player.STATE_ENDED -> View.GONE
+                            else -> loadingSpinner.visibility
+                        }
                     }
+                    handlerVisbleLoading.postDelayed(runnableplayVisibleLoading, 350)
+
                     if(playbackState == Player.EVENT_PLAYER_ERROR){
 
                     }
                     if (playbackState == Player.STATE_ENDED) {
-                        val nextEpisode = getNextEpisode()
-                        if (nextEpisode != null) {
-                            movieDate?.current_ep = nextEpisode.ep_number
-                            movieDate?.url = Common.decrypt(nextEpisode.url)
-                            movieDate?.subtitles = nextEpisode?.subtitles
-                            playerView.hideController()
-                            exoPlayer.release()
-                            loadingSpinner.visibility = View.VISIBLE
-                            loadMovieInfo(movieDate)
-                            initializePlayer(movieDate)
-                            bottomSettinsg.visibility = View.GONE
-                            conteinerplayvideoview.visibility = View.VISIBLE
-                            playerView.showController()
-                            isVisiblebottomSettinsg = false
+                        if(movieDate?.isTvLink != true){
+                            SkipNextEp()
                         }
                     }
                 }
 
+                override fun onAudioSessionIdChanged(audioSessionId: Int) {
+
+                }
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     if (isPlaying) {
-                        playerView.hideController()
+                        if(movieDate?.isTvLink != true) {
+                            playerView.hideController()
+                        }
                     }
                 }
 
                 override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+
                     if (playbackState == Player.STATE_READY && isFirstLoad) {
                         if (isFirstLoad && content?.isTvLink == false) {
+                            if (isMkvFile == true) {
+                                println("selectPortugueseAudio")
+                                selectPortugueseAudio()
+                            }
                             isFirstLoad = false
                             GeteCurrentTime(null, content, true)
                             runnable = object : Runnable {
@@ -297,11 +352,88 @@ class VideoPlayActivity2: FragmentActivity() {
                 }
 
             })
+
+            if (isMkvFile == true) {
+                trackSelector.setParameters(
+                    trackSelector.buildUponParameters()
+                        .setPreferredAudioLanguage("por")
+                )
+            }
         }catch (e: Exception){
             println(e)
             Common.errorModal(this, "Erro ao reproduzir conteudo", "Não foi possível reproduzir o conteúdo, tente novamente")
         }
 
+    }
+
+    fun selectPortugueseAudio() {
+        val mappedTrackInfo = trackSelector.currentMappedTrackInfo ?: return
+        val trackSelectorParameters = trackSelector.parameters.buildUpon()
+
+        for (i in 0 until mappedTrackInfo.rendererCount) {
+            val trackGroups = mappedTrackInfo.getTrackGroups(i)
+            for (j in 0 until trackGroups.length) {
+                val trackGroup = trackGroups.get(j)
+                for (k in 0 until trackGroup.length) {
+                    val format = trackGroup.getFormat(k)
+                    if (format.sampleMimeType?.startsWith("audio/") == true && format.language == "por") {
+                        trackSelectorParameters.setSelectionOverride(
+                            i,
+                            trackGroups,
+                            DefaultTrackSelector.SelectionOverride(j, k)
+                        )
+                        trackSelector.setParameters(trackSelectorParameters)
+                        return
+                    }
+                }
+            }
+        }
+    }
+    fun hideEpisodesChange() {
+        btnRewindEp.visibility = View.VISIBLE
+        btnSkipEp.visibility = View.VISIBLE
+        conteinerSkipEp.visibility = View.GONE
+        conteinerSkipEpVisible = false
+        btnSkipEp.isActivated = false
+        btnRewindEp.isActivated = false
+        playVisible = false
+    }
+
+    private fun SkipNextEp(){
+        val nextEpisode = getNextEpisode()
+        if (nextEpisode != null) {
+            movieDate?.current_ep = nextEpisode.ep_number
+            movieDate?.url = Common.decrypt(nextEpisode.url)
+            movieDate?.subtitles = nextEpisode?.subtitles
+            playerView.hideController()
+            exoPlayer.release()
+            loadingSpinner.visibility = View.VISIBLE
+            loadMovieInfo(movieDate)
+            initializePlayer(movieDate)
+            bottomSettinsg.visibility = View.GONE
+            conteinerplayvideoview.visibility = View.VISIBLE
+            playVisible = false
+            playerView.showController()
+            isVisiblebottomSettinsg = false
+        }
+    }
+    private fun RewindEp(){
+        val rewindEpisode = getRewindEpisode()
+        if (rewindEpisode != null) {
+            movieDate?.current_ep = rewindEpisode.ep_number
+            movieDate?.url = Common.decrypt(rewindEpisode.url)
+            movieDate?.subtitles = rewindEpisode?.subtitles
+            playerView.hideController()
+            exoPlayer.release()
+            loadingSpinner.visibility = View.VISIBLE
+            loadMovieInfo(movieDate)
+            initializePlayer(movieDate)
+            bottomSettinsg.visibility = View.GONE
+            conteinerplayvideoview.visibility = View.VISIBLE
+            playVisible = false
+            playerView.showController()
+            isVisiblebottomSettinsg = false
+        }
     }
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         if(movieDate?.isTvLink == true){
@@ -310,61 +442,116 @@ class VideoPlayActivity2: FragmentActivity() {
                     super.onKeyUp(keyCode, event)
                 }
             }
-            playerView.hideController()
             return true
         }
         val currentPosition = exoPlayer.currentPosition
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                if(!isVisiblebottomSettinsg) {
+                if(!isVisiblebottomSettinsg && !conteinerSkipEpVisible) {
+                    hideEpisodesChange()
                     togglePlayPause()
                 }
                 true
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if(!isVisiblebottomSettinsg) {
+                if(!isVisiblebottomSettinsg && !conteinerSkipEpVisible) {
+                    hideEpisodesChange()
                     skipForward(currentPosition)
                 }
                 true
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if(!isVisiblebottomSettinsg){
+                if(!isVisiblebottomSettinsg && !conteinerSkipEpVisible){
+                    hideEpisodesChange()
                     skiRewind(currentPosition)
                 }
                 true
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
-                if(!isVisiblebottomSettinsg) {
-                    playerView.showController()
+                if(playVisible && movieDate?.contentType == "Serie" && !isVisiblebottomSettinsg){
+                    conteinerSkipEpVisible = true
+                    playerView.hideController()
+                    conteinerplayvideoview.visibility = View.GONE
+                    playVisible = false
+                    conteinerSkipEp.visibility = View.VISIBLE
+                    val nextEpisode = getNextEpisode()
+                    if(nextEpisode == null){
+                        btnSkipEp.visibility = View.GONE
+                    }
+                    if(movieDate?.current_ep == 1){
+                        btnRewindEp.visibility = View.GONE
+                    }
+                    btnSkipEp.isActivated = true
+                    btnRewindEp.isActivated = true
+
+                    btnSkipEp.requestFocus()
+                    true
                 }
-                true
+                if(!isVisiblebottomSettinsg && !conteinerSkipEpVisible) {
+                    playVisible = true
+                    val handlerVisble = Handler(Looper.getMainLooper())
+                    val runnableplayVisible = Runnable {
+                        playVisible = false
+                    }
+                    handlerVisble.postDelayed(runnableplayVisible, 5000)
+                    conteinerplayvideoview.visibility = View.VISIBLE
+                    playerView.showController()
+                    true
+                }
+                else {
+                    super.onKeyUp(keyCode, event)
+                }
+
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
+                if(!conteinerSkipEpVisible){
+                    hideEpisodesChange()
                     conteinerplayvideoview.visibility = View.GONE
+                    playVisible = false
                     bottomSettinsg.visibility = View.VISIBLE
-                    if(movieDate?.contentType == "Movie" && firstRequestMovie){
-                        btnViewFit.requestFocus()
+                    if (movieDate?.contentType == "Movie" && firstRequestMovie && movieDate?.isTvLink == false) {
                         firstRequestMovie = false
+                        btnViewFit.requestFocus()
+                    }
+                    if(movieDate?.contentType == "Serie" && firstRequestMovie && movieDate?.isTvLink == false){
+                        try{
+                            firstRequestMovie = false
+                            val EpisodesList = findViewById<GridLayout>(R.id.video_episodes_series)
+                            val button = EpisodesList.getChildAt(0) as Button
+                            button.requestFocus()
+
+                        }catch (e:Exception){
+
+                        }
                     }
                     isVisiblebottomSettinsg = true
                     true
+                }else{
+                    super.onKeyUp(keyCode, event)
                 }
+            }
             KeyEvent.KEYCODE_BACK -> {
+                if(conteinerSkipEpVisible){
+                    playVisible = false
+                    hideEpisodesChange()
+                    return  true
+                }
                 if(isVisiblebottomSettinsg) {
                     bottomSettinsg.visibility = View.GONE
                     conteinerplayvideoview.visibility = View.VISIBLE
-                    playerView.showController()
+                    playVisible = false
                     isVisiblebottomSettinsg = false
                     firstSelectSepareteItem = true
                     firstRequestMovie = true
-                    true
+                    playerView.hideController()
+                    return  true
                 }
                 if (playerView.isControllerVisible) {
                     playerView.hideController()
-                    true
-                } else {
-                    super.onKeyUp(keyCode, event)
+                    playVisible = false
+                    return  true
                 }
+                super.onKeyUp(keyCode, event)
             }
             else -> super.onKeyUp(keyCode, event)
         }
@@ -405,8 +592,6 @@ class VideoPlayActivity2: FragmentActivity() {
         else{
             urlImageBG = "https://image.tmdb.org/t/p/w780" + movie?.backdrop_path
         }
-
-        println(urlImageBG)
         Glide.with(this)
             .asBitmap()
             .load(urlImageBG)
@@ -451,6 +636,7 @@ class VideoPlayActivity2: FragmentActivity() {
     }
 
     private fun togglePlayPause() {
+
         val currentPosition = exoPlayer.currentPosition
         if (exoPlayer.isPlaying) {
             if(movieDate != null && currentPosition > 60000 && tojumpLong){
@@ -458,6 +644,7 @@ class VideoPlayActivity2: FragmentActivity() {
                 ResetToJumLong()
                 GeteCurrentTime(currentPosition, movieDate!!, null)
             }
+            playerView.showController()
             pauseVideoPlayImage.visibility = View.VISIBLE
             exoPlayer.pause()
         } else {
@@ -471,6 +658,15 @@ class VideoPlayActivity2: FragmentActivity() {
         val currentIndex = episodesList.indexOfFirst { it.ep_number == movieDate?.current_ep }
         return if (currentIndex != -1 && currentIndex < episodesList.size - 1) {
             episodesList[currentIndex + 1]
+        } else {
+            null
+        }
+    }
+
+    private fun getRewindEpisode(): ListEpisodesModel? {
+        val currentIndex = episodesList.indexOfFirst { it.ep_number == movieDate?.current_ep }
+        return if (currentIndex != -1 && currentIndex < episodesList.size - 1) {
+            episodesList[currentIndex - 1]
         } else {
             null
         }
@@ -525,6 +721,7 @@ class VideoPlayActivity2: FragmentActivity() {
                         initializePlayer(movieDate)
                         bottomSettinsg.visibility = View.GONE
                         conteinerplayvideoview.visibility = View.VISIBLE
+                        playVisible = true
                         playerView.showController()
                         isVisiblebottomSettinsg = false
                     }
@@ -586,7 +783,7 @@ class VideoPlayActivity2: FragmentActivity() {
                                         )
                                     )
                             }else {
-                                Toast.makeText(this, "Máximo de telas simultâneas excedido", Toast.LENGTH_LONG).show()
+                                Toast.makeText(this, "O limite de ${screensAvailables} dispositivos foi atingido na sua conta.", Toast.LENGTH_LONG).show()
                                 this.finish()
                             }
                         }
@@ -768,15 +965,12 @@ class VideoPlayActivity2: FragmentActivity() {
         runnableScreenVerify?.let {
             handlerScreenVerif.removeCallbacks(it)
         }
-
         runnableScreenVerify = null
         conteinerplayvideoview.visibility = View.VISIBLE
+        playVisible = true
     }
     override fun onStop() {
         super.onStop()
-        if(tojumpLong && exoPlayer.currentPosition > 60000){
-            GeteCurrentTime(exoPlayer.currentPosition, movieDate!!, null)
-        }
         exoPlayer.release()
         isFirstLoad = true
         runnable?.let {
@@ -789,6 +983,9 @@ class VideoPlayActivity2: FragmentActivity() {
         }
 
         runnableScreenVerify = null
+        if(tojumpLong && exoPlayer.currentPosition > 60000 && movieDate?.isTvLink != true){
+            GeteCurrentTime(exoPlayer.currentPosition, movieDate!!, null)
+        }
         updateAndVerifyScreens(true)
     }
 

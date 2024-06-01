@@ -33,7 +33,8 @@ class SplashScreenActivity: FragmentActivity() {
     init {
         System.loadLibrary("api-keys")
     }
-    external fun getKeys() : String
+//    external fun getKeys() : String
+    external fun getKeys(): String
     lateinit var loadingDialog: Dialog
     private val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
     private val STORAGE_PERMISSION_REQUEST_CODE = 123

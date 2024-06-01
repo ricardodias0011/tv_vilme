@@ -1,5 +1,6 @@
 package com.nest.nestplay
 
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -32,11 +33,13 @@ class SearchMovie : FragmentActivity() {
     private lateinit var binding: ActivitySearchMovieBinding
     private lateinit var adpterMovie: MoviesListAdpter
     private var listMovies: MutableList<ListMovieModel.Movie> = mutableListOf()
+    lateinit var loadingDialog: Dialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySearchMovieBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        loadingDialog = Common.loadingDialog(this)
 
         val recyclerViewMoviesList = binding.searchMoviesList
         recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 5)
@@ -46,7 +49,7 @@ class SearchMovie : FragmentActivity() {
         val keyboardBottomLayout = findViewById<GridLayout>(R.id.keyboard_bottom)
         val keyboardLayout = findViewById<GridLayout>(R.id.keyboard)
         val keyboardButtonsBottom = listOf(
-            "ESPAÇO", "APAGAR"
+            "ESPAÇO", "APAGAR", "BUSCAR"
         )
         val keyboardButtons = listOf(
             "a", "b", "c", "d", "e", "f",
@@ -117,15 +120,20 @@ class SearchMovie : FragmentActivity() {
     }
 
     private fun GetSearchMovies(query: String) {
+        try{
+            loadingDialog.show()
         val queryCapitalizeCase = toCapitalize(query)
         println(queryCapitalizeCase)
 
         val tasks = mutableListOf<Task<QuerySnapshot>>().apply {
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("title", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(15).get())
-
+                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(20).get())
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("name", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(15).get())
+                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(20).get())
+            add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("original_title", queryCapitalizeCase)
+                .whereLessThanOrEqualTo("original_title", queryCapitalizeCase + "\uf8ff").limit(10).get())
+            add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("original_name", queryCapitalizeCase)
+                .whereLessThanOrEqualTo("original_name", queryCapitalizeCase + "\uf8ff").limit(10).get())
 
         }
 
@@ -142,18 +150,23 @@ class SearchMovie : FragmentActivity() {
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
                         if(movie != null){
                             movie.poster_path = URLPATHIMAGE + movie.poster_path
-                            listMovies.add(movie)
+                            if (listMovies.find { _movie -> _movie.id == movie.id } == null) {
+                                listMovies.add(movie)
+                            }
                         }
                     }
                 }
                 adpterMovie.notifyDataSetChanged()
+                loadingDialog.hide()
             }
             .addOnFailureListener { it
+                loadingDialog.hide()
                 if(it.message == Common.msgPermissionDENIED){
                     println("msgPermissionDENIED")
                     accessDenied()
                 }
             }
+        }catch (e:Exception){}
     }
 
     private fun fetchMoviesAndUpdateList(): CollectionReference {
@@ -168,9 +181,12 @@ class SearchMovie : FragmentActivity() {
         val newText = when (buttonLabel) {
             "APAGAR" -> if (text.isNotEmpty()) text.substring(0, text.length - 1) else ""
             "ESPAÇO" -> text + " "
+            "BUSCAR" -> text
             else -> text + buttonLabel
         }
-        GetSearchMovies(newText)
+        when (buttonLabel) {
+            "BUSCAR" ->  GetSearchMovies(newText)
+        }
         editText.setText(newText)
     }
     fun accessDenied () {

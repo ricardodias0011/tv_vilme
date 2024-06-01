@@ -41,6 +41,10 @@ import javax.crypto.spec.SecretKeySpec
 import kotlin.math.ceil
 
 class DetailMovieActivity: FragmentActivity() {
+    init {
+        System.loadLibrary("api-keys")
+    }
+    external fun getKeys() : String
 
     lateinit var binding: ActivityDetailMovieBinding
     lateinit var loadingDialog: Dialog
@@ -66,6 +70,8 @@ class DetailMovieActivity: FragmentActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_detail_movie)
         setContentView(binding.root)
         movieId = intent.getIntExtra("id", 0)
+
+        Constants.KEY_D = getKeys()
 
         val user = getCurrentUser()
         var today = Date()
@@ -203,7 +209,7 @@ class DetailMovieActivity: FragmentActivity() {
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
                         GeteCurrentTime(movie)
-                        if(movie.contentType == "Serie"){
+                        if(movie?.contentType == "Serie"){
                             binding.moreLikeThis.nextFocusForwardId = binding.spinnerSelectEpNumber.id
                             binding.horizontalScrollViewEpsodes.visibility = View.VISIBLE
                             binding.spinnerSelectEpNumber.visibility = View.VISIBLE
@@ -338,6 +344,7 @@ class DetailMovieActivity: FragmentActivity() {
             button.setBackgroundResource(R.drawable.btn_selector_keybord)
             if(episode.ep_number == lastEpisode?.ep_number && episode.season == lastEpisode?.season){
                 button.setBackgroundResource(R.drawable.selected_active_btn)
+                button.setTextColor(Color.WHITE)
             }else{
                 button.setBackgroundResource(R.drawable.btn_selector_keybord)
             }

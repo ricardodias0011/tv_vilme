@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.leanback.widget.BrowseFrameLayout
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
@@ -50,6 +51,7 @@ import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.OnItemFocusChangeListener {
+
     private lateinit var binding: ActivityHomeBinding
     val MoviesListFragment = ListFragment()
 
@@ -118,6 +120,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         .whereGreaterThan("vote_average", 8)
                         .orderBy("vote_count", Query.Direction.DESCENDING)
                     fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8, _lc)
+                    fatchDataContent(70, "Doramas", _lc)
                     fatchDataContent(5, "Animes", _lc)
                 }
                 if(title == "Recomendados pela critica" && !ThirdGrouploaded){
@@ -790,13 +793,15 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
             binding.description.maxLines = 3
 
             binding.description.setText(movie?.overview)
-            var urlImage = "https://image.tmdb.org/t/p/w1280" + movie?.backdrop_path
+            var urlImage = "https://image.tmdb.org/t/p/w780" + movie?.backdrop_path
             if(ownUrl == true){
                 urlImage = movie.backdrop_path
             }
+            println(urlImage)
             try {
                 Glide.with(this)
                     .load(urlImage)
+                    .transition(DrawableTransitionOptions.withCrossFade())
                     .into(binding.imgBanner)
             }catch (e: Exception){
                 Toast.makeText(this,"Erro: Load image", Toast.LENGTH_LONG).show()

@@ -37,24 +37,24 @@
         android:id="@+id/keyboard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
         android:columnCount="6"
         android:nextFocusDown="@id/keyboard_bottom"
         android:nextFocusRight="@id/searchMoviesList"
         android:rowCount="6"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText" />
+        app:layout_constraintTop_toBottomOf="@+id/keyboard_bottom" />
     <GridLayout
         android:id="@+id/keyboard_bottom"
         android:focusable="false"
         android:layout_width="0dp"
+        android:layout_marginTop="35dp"
         android:layout_height="wrap_content"
         android:nextFocusDown="@id/searchMoviesList"
         android:nextFocusRight="@id/searchMoviesList"
-        android:columnCount="2"
+        android:columnCount="3"
         android:rowCount="1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/keyboard" />
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
 
     <androidx.recyclerview.widget.RecyclerView

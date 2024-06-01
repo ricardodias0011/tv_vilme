@@ -13,6 +13,7 @@ class Genres {
             Genre(16, "Animação"),
             Genre(35, "Comédia"),
             Genre(80, "Crime"),
+            Genre(70, "Dorama"),
             Genre(99, "Documentário"),
             Genre(18, "Drama"),
             Genre(10751, "Família"),

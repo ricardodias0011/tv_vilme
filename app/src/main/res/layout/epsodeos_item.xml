@@ -6,7 +6,6 @@
     android:clickable="true"
     android:focusable="true"
     android:layout_height="wrap_content">
-
     <TextView
         android:id="@+id/episode_item"
         android:layout_width="55dp"

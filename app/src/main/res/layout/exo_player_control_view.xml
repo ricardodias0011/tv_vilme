@@ -99,6 +99,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         app:played_color="#FF0000"
+        android:focusedByDefault="true"
         app:scrubber_color="#FFFFFF"
         app:buffered_color="#CCCCCC"
         app:unplayed_color="#333333" />

@@ -83,7 +83,7 @@ class SearchMovie : FragmentActivity() {
 
         for (buttonLabel in keyboardButtons) {
             val button = Button(this)
-            button.text = buttonLabel
+            button.text = buttonLabel.uppercase()
             val params = GridLayout.LayoutParams().apply {
                 width = resources.getDimensionPixelSize(R.dimen.button_width)
                 height = resources.getDimensionPixelSize(R.dimen.button_height)

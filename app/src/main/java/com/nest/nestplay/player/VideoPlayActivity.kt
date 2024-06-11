@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -23,13 +22,10 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
-import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.ui.DefaultTimeBar
 import com.google.android.exoplayer2.ui.PlayerView
@@ -51,7 +47,6 @@ import com.nest.nestplay.utils.Constants
 import kotlin.math.ceil
 
 class VideoPlayActivity2: FragmentActivity() {
-
     init {
         System.loadLibrary("api-keys")
     }
@@ -155,8 +150,8 @@ class VideoPlayActivity2: FragmentActivity() {
         }
 
         movieDate = data
-        playerView.resizeMode = resizeModes[0]
-        btnViewFit.isActivated = true
+        playerView.resizeMode = resizeModes[3]
+        btnViewFill.isActivated = true
 
         btnViewFit.setOnClickListener {
             playerView.resizeMode = resizeModes[0]

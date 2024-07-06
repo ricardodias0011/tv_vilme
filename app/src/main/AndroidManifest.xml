@@ -23,6 +23,7 @@
         android:label="@string/app_name"
         android:banner="@mipmap/logc"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.NestPlay">
         <activity
             android:name=".SettingsAccountActivity"

@@ -22,6 +22,7 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import com.google.gson.Gson
@@ -35,6 +36,7 @@ import com.nest.nestplay.model.ListMovieModel
 import com.nest.nestplay.model.MovieModel
 import com.nest.nestplay.model.TimeModel
 import com.nest.nestplay.model.UserModel
+import com.nest.nestplay.model.VersionsModel
 import com.nest.nestplay.model.parseM3uPlaylist
 import com.nest.nestplay.player.VideoPlayActivity2
 import com.nest.nestplay.service.ApiClient
@@ -49,6 +51,7 @@ import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
 
 class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.OnItemFocusChangeListener {
 
@@ -89,7 +92,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
         addFragment(MoviesListFragment, R.id.mainMoviesHome)
-
+        getNewVersionApp()
         loadingDialog = Common.loadingDialog(this)
 
         navBar = findViewById(R.id.blfNavBar)
@@ -119,7 +122,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     var queryRecomentCritic = fetchMoviesAndUpdateList().limit(12)
                         .whereGreaterThan("vote_average", 8)
                         .orderBy("vote_count", Query.Direction.DESCENDING)
-                    fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 8, _lc)
+                    fatchDataContentWidthQuery(queryRecomentCritic, "Recomendados pela critica", 2485, _lc)
                     fatchDataContent(70, "Doramas", _lc)
                     fatchDataContent(5, "Animes", _lc)
                 }
@@ -136,6 +139,10 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                 if (title == "Netflix" && !FourGrouploaded) {
                     FourGrouploaded = true
                     fatchDataContent(10751, "Para toda familia", _lc)
+                    var queryx = fetchMoviesAndUpdateList()
+                        .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 35L, 80L, 36L, 53L, 9648L, 10765L, 10759L, 27L, 18L, 10752L, 37L))
+                        .limit(14)
+                    fatchDataContentWidthQuery(queryx, "Variados", 2316, _lc)
                     fatchDataContent(878, "Ficção científica", _lc)
                     fatchDataContent(10749, "Romances", _lc)
                 }
@@ -144,6 +151,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                     fatchDataContent(37, "Faroeste", _lc)
                     fatchDataContent(10764, "Realitys", _lc)
                     fatchDataContent(10402, "Música", _lc)
+
                 }
                 if(title == "Música" && !SixGrouploaded){
                     SixGrouploaded = true
@@ -636,7 +644,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         val idCategory = 101
         var query = fetchMoviesAndUpdateList()
             .orderBy("popularity", Query.Direction.DESCENDING)
-            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L, 9648L))
+            .whereArrayContainsAny("genre_ids", listOf(14L, 28L, 12L, 16L, 35L, 80L, 36L, 878L, 53L, 5L, 9648L, 10765L))
             .limit(18)
         if (type == "Serie") {
             query = query.whereEqualTo("contentType", "Serie")
@@ -660,21 +668,27 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         movieList.add(movie)
                     }
                 }
+
+
                 if(!movieList.isEmpty()){
                     val titleList = if (type == "Serie") "Séries populares" else "Populares"
                     movieList.add(createMoreItem(idCategory))
                     UpdateListItem(movieList, titleList)
                 }
+
+                var query2createdAt = fetchMoviesAndUpdateList().limit(15)
+                    .orderBy("createdAt", Query.Direction.DESCENDING)
+                fatchDataContentWidthQuery(query2createdAt, "Adicionados recentemente", 3000, type)
+
                 loadingDialog.dismiss()
+
                 if(lastSelectedCategory == "Serie"){
                     var queryNewEpsodes = fetchMoviesAndUpdateList().limit(12)
                         .whereEqualTo("contentType", "Serie")
                         .orderBy("updatedAt", Query.Direction.DESCENDING)
                     fatchDataContentWidthQuery(queryNewEpsodes, "Novos episódios", 10, type)
                 }
-                if(lastSelectedCategory == "Home"){
-                    fatchDataContent(200, "Filmes e Séries em Destaque", type)
-                }
+
                 fatchDataContent(28, "Luz, Câmera, Ação", type)
                 fatchDataContent(35, "Comédia", type)
                 loadingMovies = false
@@ -691,12 +705,36 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
 
     private fun fatchDataContent(idCategory: Int, title: String, currentCategory: String){
         loadingMovies = true
-        var query=  fetchMoviesAndUpdateList().limit(12)
+        var query =  fetchMoviesAndUpdateList().limit(12)
         if(lastSelectedCategory != "Home"){
             query = query.whereEqualTo("contentType", lastSelectedCategory)
         }
+        val randomNumber = Random.nextInt(1, 5)
+        val randomNumberORDER = Random.nextInt(1, 2)
+
+        if(randomNumber === 1){
+            val orderDirection = if (randomNumberORDER == 1) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+            query = query.orderBy(FieldPath.documentId(), orderDirection)
+        }
+        if(randomNumber === 2){
+            val orderDirection = if (randomNumberORDER == 1) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+            query = query.orderBy("vote_count", orderDirection)
+        }
+        if(randomNumber === 3){
+            val orderDirection = if (randomNumberORDER == 1) Query.Direction.ASCENDING else Query.Direction.DESCENDING
+            query = query.orderBy("vote_average", orderDirection)
+        }
+
+        if(randomNumber === 4){
+            val orderDirection = if (randomNumberORDER == 1) Query.Direction.ASCENDING else Query.Direction.DESCENDING
+            query = query.orderBy("createdAt", orderDirection)
+        }
+
+        println(randomNumber)
+
         query
             .whereArrayContains("genre_ids", idCategory)
+            .limit(15)
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
@@ -707,6 +745,7 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         movieList.add(movie)
                     }
                 }
+                movieList.shuffle()
                 if(!movieList.isEmpty()){
                     if(idCategory != 200){
                         movieList.add(createMoreItem(idCategory))
@@ -723,16 +762,40 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
     }
 
     private fun fatchDataContentWidthQuery(query:  Query, title: String, idCategory: Int, Category: String){
+
         loadingMovies = true
         var modifiedQuery = query
         if(lastSelectedCategory != "Home"){
             modifiedQuery = query.whereEqualTo("contentType", lastSelectedCategory)
         }
+        if(idCategory === 2316){
+            val randomNumber = Random.nextInt(1, 5)
+            val randomNumberORDER = Random.nextInt(1, 2)
+
+            if(randomNumber === 1){
+                val orderDirection = if (randomNumberORDER == 1) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+                modifiedQuery = modifiedQuery.orderBy(FieldPath.documentId(), orderDirection)
+            }
+            if(randomNumber === 2){
+                val orderDirection = if (randomNumberORDER == 1) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+                modifiedQuery = modifiedQuery.orderBy("vote_count", orderDirection)
+            }
+            if(randomNumber === 3){
+                val orderDirection = if (randomNumberORDER == 1) Query.Direction.ASCENDING else Query.Direction.DESCENDING
+                modifiedQuery = modifiedQuery.orderBy("vote_average", orderDirection)
+            }
+            if(randomNumber === 4){
+                val orderDirection = if (randomNumberORDER == 1) Query.Direction.ASCENDING else Query.Direction.DESCENDING
+                modifiedQuery = modifiedQuery.orderBy("createdAt", orderDirection)
+            }
+        }
+
         modifiedQuery
             .get()
             .addOnSuccessListener { documents ->
                 val movieList = mutableListOf<ListMovieModel.Movie>()
                 for (document in documents){
+
                     if(document != null){
 
                         val movie = document.toObject(ListMovieModel.Movie::class.java)
@@ -740,14 +803,26 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
                         movieList.add(movie)
                     }
                 }
-                if(!movieList.isEmpty() && Category == lastSelectedCategory){
-                    movieList.add(createMoreItem(idCategory))
+                if(idCategory !== 3000){
+                    movieList.shuffle()
+                }
+                var type = Category
+
+                if(type.isEmpty()){
+                    type = "Home"
+                }
+
+                if(!movieList.isEmpty() && type == lastSelectedCategory){
+                    if(idCategory !== 3000 || idCategory !== 3 || idCategory !== 2316){
+                        movieList.add(createMoreItem(idCategory))
+                    }
                     UpdateListItem(movieList, title)
                 }
                 loadingMovies = false
             }
             .addOnFailureListener {
                 loadingMovies = false
+                println(it)
             }
     }
 
@@ -819,6 +894,33 @@ class HomeActivity: FragmentActivity(), View.OnKeyListener,  MoviesListAdpter.On
         return docRef
     }
 
+    private fun getNewVersionApp() {
+        val db = Firebase.firestore
+        val docRef = db.collection("tv_app_versions")
+        docRef
+            .whereEqualTo("active", true)
+            .whereEqualTo("type", "TV")
+            .whereGreaterThan("version", Constants.versio_app)
+
+            .get()
+            .addOnSuccessListener { documents ->
+                val versionsList = mutableListOf<VersionsModel>()
+                for (document in documents){
+                    if(document != null){
+                        val _version = document.toObject(VersionsModel::class.java)
+                        versionsList.add(_version)
+                    }
+                }
+                if(versionsList.isNotEmpty()){
+
+                    val firstDocument = documents.firstOrNull()
+                    val getfirstMovie = firstDocument?.toObject(VersionsModel::class.java)
+                    var listOverview = getfirstMovie?.overview?.joinToString(separator = "") { "- <font color='#08B44E'>${it}</font><br />" }
+                    listOverview = HtmlCompat.fromHtml("$listOverview", HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
+                    Common.newVersion(this, "Versão ${getfirstMovie?.version} disponível", listOverview, getfirstMovie?.url_donwload)
+                }
+            }
+    }
     private fun fetchGetLinkUrlTv(): CollectionReference {
         val db = Firebase.firestore
         val docRef = db.collection("onlineTvLinks")

@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent=".32" />
+        app:layout_constraintGuide_percent=".35" />
 
     <TextView
         android:id="@+id/editText"
@@ -27,6 +27,7 @@
         android:focusableInTouchMode="false"
         android:ellipsize="end"
         android:background="@color/transparent"
+        android:textAllCaps="true"
         android:maxLines="2"
         android:textSize="20dp"
         app:layout_constraintEnd_toStartOf="@+id/guideline_start"

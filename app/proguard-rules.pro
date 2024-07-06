@@ -18,6 +18,7 @@
 -keep class com.nest.nestplay.model.ChannelTVModel { *; }
 -keep class com.nest.nestplay.model.MovieModel { *; }
 -keep class com.nest.nestplay.model.TimeModel { *; }
+-keep class com.nest.nestplay.model.VersionsModel{ *; }
 -keep class com.nest.nestplay.model.ListMovieModel { *; }
 -keep class com.nest.nestplay.model.ListMovieModel$Movie { *; }
 -keep class com.nest.nestplay.model.LinksTvModel { *; }

@@ -89,6 +89,7 @@ class PlaybackFragment : VideoSupportFragment() {
         }
         movieDate = data
 
+
         if(movieDate?.listEpsodes != null){
             episodesList = movieDate?.listEpsodes!!
         }

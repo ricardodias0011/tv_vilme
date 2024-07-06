@@ -3,6 +3,8 @@ package com.nest.nestplay.utils
 import android.app.Activity
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Handler
@@ -175,6 +177,30 @@ class Common {
             }
             dialog.show()
         }
+
+        fun newVersion(context: Context, title: String, msg: String?, url: String?) {
+            val dialog = Dialog(context, R.style.Theme_NestPlay)
+            dialog.window?.setBackgroundDrawableResource(R.color.transparent)
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.dialog_version)
+
+            dialog.findViewById<TextView>(R.id.VersionTitleContent).text = title
+            dialog.findViewById<TextView>(R.id.mainTextVersion).text = msg
+
+            dialog.findViewById<TextView>(R.id.closeBtnVersion).setOnClickListener {
+                    dialog.dismiss()
+            }
+
+            dialog.findViewById<TextView>(R.id.downloadBtn).setOnClickListener{
+                val uri = Uri.parse(url)
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                context.startActivity(intent)
+            }
+
+            dialog.show()
+        }
+
 
         fun changeSubtitle(context: Context, subtitles: List<String>) {
             val dialog = Dialog(context, R.style.Theme_NestPlay)

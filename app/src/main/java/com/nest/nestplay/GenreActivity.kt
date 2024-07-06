@@ -105,6 +105,11 @@ class GenreActivity : FragmentActivity() {
             customId = true
             query = query.whereEqualTo("distributed", "Netflix")
         }
+        if(gere == 2485){
+            customId = true
+            query = query.whereGreaterThan("vote_average", 8)
+            .orderBy("vote_count", Query.Direction.DESCENDING)
+        }
         if (gere == 8) {
             customId = true
             query = query.whereEqualTo("distributed", "Marvel")

@@ -50,6 +50,8 @@ class SplashScreenActivity: FragmentActivity() {
 
         Constants.KEY_D = getKeys()
 
+        binding.textVersionApp.text = "V ${Constants.versio_app}"
+
         loadingDialog = Common.loadingDialog(this)
         try{
             Glide.with(this)

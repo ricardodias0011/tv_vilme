@@ -111,6 +111,7 @@ class MainActivity : FragmentActivity() {
             if (failedAttempts > 3) {
                 lockLoginButton()
             }
+            println(it)
             when (it) {
                 is FirebaseAuthInvalidCredentialsException -> {
                     Toast.makeText(this, "Email ou senha incorretos.", Toast.LENGTH_LONG).show()

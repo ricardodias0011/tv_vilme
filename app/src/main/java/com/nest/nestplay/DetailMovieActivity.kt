@@ -263,8 +263,8 @@ class DetailMovieActivity: FragmentActivity() {
             }
         }
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, listTemps)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(this, R.layout.spinner_item, listTemps)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         binding.spinnerSelectTemp.adapter = adapter
 
         if (season != null && season >= 1 && season <= totalSeasons!!) {
@@ -405,8 +405,8 @@ class DetailMovieActivity: FragmentActivity() {
                 listEpNumbers.add("Episódios $initialEp - $lastEp")
             }
         }
-        val adapterSelectSpinnerEp_numbers = ArrayAdapter(this, android.R.layout.simple_spinner_item, listEpNumbers)
-        adapterSelectSpinnerEp_numbers.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapterSelectSpinnerEp_numbers = ArrayAdapter(this, R.layout.spinner_item, listEpNumbers)
+        adapterSelectSpinnerEp_numbers.setDropDownViewResource(R.layout.spinner_dropdown_item)
 
         binding.spinnerSelectEpNumber.adapter = adapterSelectSpinnerEp_numbers
 
@@ -439,17 +439,48 @@ class DetailMovieActivity: FragmentActivity() {
         }
         val db =  Firebase.firestore
         val docRef = db.collection("catalog")
+        val movieList = mutableListOf<MovieModel>()
+        val nameSplit = detailsResponse!!.name.split(" ")[0]
+        val titleSplit = detailsResponse!!.title.split(" ")[0]
+        println(titleSplit)
+        if(nameSplit?.length!! >= 4 || titleSplit?.length!! >= 4) {
+            val queryNameOrTitle = if (detailsResponse?.contentType == "Serie") {
+                docRef.whereGreaterThanOrEqualTo("name", nameSplit)
+                    .whereLessThanOrEqualTo("name", nameSplit + "\uf8ff")
+            } else {
+                docRef.whereGreaterThanOrEqualTo("title", titleSplit)
+                    .whereLessThanOrEqualTo(
+                        "title",
+                        titleSplit + "\uf8ff"
+                    )
+            }
+
+            queryNameOrTitle
+                .limit(5)
+                .get()
+                .addOnSuccessListener { documents ->
+                    for (document in documents) {
+                        if (document != null) {
+                            val movie = document.toObject(MovieModel::class.java)
+                            movie.poster_path =
+                                "https://image.tmdb.org/t/p/w500" + movie.poster_path
+                            if (movie.id != id_movie && movieList.none { it.id == movie.id }) {
+                                movieList.add(movie)
+                            }
+                        }
+                    }
+                }
+        }
         var query = docRef.whereArrayContains("genre_ids", genre)
         query
             .limit(14)
             .get()
             .addOnSuccessListener {documents ->
-                val movieList = mutableListOf<MovieModel>()
                 for (document in documents){
                     if(document != null){
                         val movie = document.toObject(MovieModel::class.java)
                         movie.poster_path = "https://image.tmdb.org/t/p/w500" + movie.poster_path
-                        if (movie.id != id_movie) {
+                        if (movie.id != id_movie && movieList.none { it.id == movie.id }) {
                             movieList.add(movie)
                         }
                     }

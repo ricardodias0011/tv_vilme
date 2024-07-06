@@ -42,7 +42,7 @@ class SearchMovie : FragmentActivity() {
         loadingDialog = Common.loadingDialog(this)
 
         val recyclerViewMoviesList = binding.searchMoviesList
-        recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 5)
+        recyclerViewMoviesList.layoutManager = GridLayoutManager(this, 4)
         adpterMovie = MoviesListAdpter(this, listMovies)
         recyclerViewMoviesList.adapter = adpterMovie
 
@@ -127,9 +127,9 @@ class SearchMovie : FragmentActivity() {
 
         val tasks = mutableListOf<Task<QuerySnapshot>>().apply {
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("title", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(20).get())
+                .whereLessThanOrEqualTo("title", queryCapitalizeCase + "\uf8ff").limit(15).get())
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("name", queryCapitalizeCase)
-                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(20).get())
+                .whereLessThanOrEqualTo("name", queryCapitalizeCase + "\uf8ff").limit(15).get())
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("original_title", queryCapitalizeCase)
                 .whereLessThanOrEqualTo("original_title", queryCapitalizeCase + "\uf8ff").limit(10).get())
             add(fetchMoviesAndUpdateList().whereGreaterThanOrEqualTo("original_name", queryCapitalizeCase)

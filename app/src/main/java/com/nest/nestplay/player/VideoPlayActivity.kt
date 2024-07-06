@@ -25,10 +25,13 @@ import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import com.google.android.exoplayer2.ui.DefaultTimeBar
 import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.auth
@@ -45,7 +48,7 @@ import com.nest.nestplay.model.UserModel
 import com.nest.nestplay.utils.Common
 import com.nest.nestplay.utils.Constants
 import kotlin.math.ceil
-
+import com.google.android.exoplayer2.util.Util
 class VideoPlayActivity2: FragmentActivity() {
     init {
         System.loadLibrary("api-keys")
@@ -275,8 +278,17 @@ class VideoPlayActivity2: FragmentActivity() {
                 .setTrackSelector(trackSelector)
                 .build()
 
+//            val dataSourceFactory =  DefaultDataSourceFactory(this, Util.getUserAgent(this, "NestPlay"))
+//
+//
+//
+//            val hlsMediaSource: MediaSource = HlsMediaSource.Factory(dataSourceFactory)
+//                .createMediaSource(MediaItem.fromUri(Uri.parse("http://cdn.topk.live:80/Cliente55/Cliente56/279930.m3u8")))
+            var link = content?.url
+            println(link)
+//            println(hlsMediaSource)
             playerView.player = exoPlayer
-                val mediaItem = MediaItem.fromUri(Uri.parse(content?.url))
+                val mediaItem = MediaItem.fromUri(Uri.parse(link))
 
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.prepare()

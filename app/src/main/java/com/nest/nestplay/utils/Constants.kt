@@ -2,6 +2,7 @@ package com.nest.nestplay.utils
 import java.io.FileInputStream
 import java.util.Properties
 object Constants {
+    const val versio_app = 1.01
 
     const val MENU_SEARCH = "search"
     const val MENU_HOME = "home"
@@ -13,7 +14,6 @@ object Constants {
     const val MENU_SETTINGS = "settings"
     const val MENI_ANIME = "animes"
     var KEY_D = ""
-
 }
 
 fun getApiKey(): String {
